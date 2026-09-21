@@ -40,6 +40,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8e608210-ed93-4d09-bafd-7d1514a49ee2"
+      }
+    },
+    "owner": "samirshaikh-devs-team"
   }
 }
