@@ -78,7 +78,7 @@ export default function HistoryScreen() {
           />
         ) : (data?.history ?? []).length === 0 ? (
           <EmptyState
-            icon="📜"
+            icon="time-outline"
             title="No audit logs"
             description="No logged events found for the selected category."
           />

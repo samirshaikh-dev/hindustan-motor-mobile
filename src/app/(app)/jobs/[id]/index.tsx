@@ -135,7 +135,7 @@ export default function JobDetailScreen() {
 
         {(data.tasks?.length ?? 0) === 0 ? (
           <EmptyState
-            icon="🔧"
+            icon="construct-outline"
             title="No tasks created"
             description="Add tasks to assign work steps to floor technicians."
             actionTitle="Add First Task"

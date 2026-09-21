@@ -1,22 +1,38 @@
+import { Ionicons } from '@expo/vector-icons';
+import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/common/Button';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 
 type Props = {
-  icon?: string;
+  icon?: keyof typeof Ionicons.glyphMap | ReactNode;
   title: string;
   description?: string;
   actionTitle?: string;
   onAction?: () => void;
 };
 
-export function EmptyState({ icon = '📋', title, description, actionTitle, onAction }: Props) {
+export function EmptyState({ icon = 'clipboard-outline', title, description, actionTitle, onAction }: Props) {
+  const renderIcon = () => {
+    if (typeof icon === 'string' && icon in Ionicons.glyphMap) {
+      return (
+        <Ionicons
+          name={icon as keyof typeof Ionicons.glyphMap}
+          size={24}
+          color={Colors.light.textSecondary}
+        />
+      );
+    }
+    if (typeof icon === 'string') {
+      return <Text style={styles.icon}>{icon}</Text>;
+    }
+    return icon;
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.iconBox}>
-        <Text style={styles.icon}>{icon}</Text>
-      </View>
+      <View style={styles.iconBox}>{renderIcon()}</View>
       <Text style={styles.title}>{title}</Text>
       {description ? <Text style={styles.description}>{description}</Text> : null}
       {actionTitle && onAction ? (
