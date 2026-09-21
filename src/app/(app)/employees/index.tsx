@@ -251,15 +251,9 @@ export default function EmployeesScreen() {
                     pressed && styles.staffCardPressed,
                   ]}
                   onPress={() => router.push(`/(app)/employees/${emp.id}`)}>
-                  {/* Avatar & Online/Active Dot */}
+                  {/* Avatar */}
                   <View style={styles.avatarBox}>
                     <Text style={styles.avatarText}>{initial}</Text>
-                    <View
-                      style={[
-                        styles.statusDot,
-                        emp.isActive ? styles.statusDotActive : styles.statusDotInactive,
-                      ]}
-                    />
                   </View>
 
                   {/* Staff Info */}
@@ -282,28 +276,20 @@ export default function EmployeesScreen() {
                       <Text style={styles.phoneText}>{emp.phone}</Text>
                     </Pressable>
 
-                    <View style={styles.workloadRow}>
-                      <View
-                        style={[
-                          styles.taskPill,
-                          taskCount > 0 ? styles.taskPillBusy : styles.taskPillFree,
-                        ]}>
-                        <Ionicons
-                          name={taskCount > 0 ? 'construct-outline' : 'checkmark-circle-outline'}
-                          size={12}
-                          color={taskCount > 0 ? Colors.light.warning : Colors.light.success}
-                        />
-                        <Text
-                          style={[
-                            styles.taskPillText,
-                            taskCount > 0 ? styles.taskPillTextBusy : styles.taskPillTextFree,
-                          ]}>
-                          {taskCount === 0
-                            ? 'Available'
-                            : `${taskCount} active task${taskCount === 1 ? '' : 's'}`}
-                        </Text>
+                    {taskCount > 0 ? (
+                      <View style={styles.workloadRow}>
+                        <View style={[styles.taskPill, styles.taskPillBusy]}>
+                          <Ionicons
+                            name="construct-outline"
+                            size={12}
+                            color={Colors.light.warning}
+                          />
+                          <Text style={[styles.taskPillText, styles.taskPillTextBusy]}>
+                            {taskCount} active task{taskCount === 1 ? '' : 's'}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
+                    ) : null}
                   </View>
 
                   {/* Chevron */}

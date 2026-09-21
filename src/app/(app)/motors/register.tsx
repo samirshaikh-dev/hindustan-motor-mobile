@@ -1,16 +1,29 @@
+import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { z } from 'zod';
 
 import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { queryKeys } from '@/config/queryKeys';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
+import { mediaService } from '@/services/media.service';
 import { motorService } from '@/services/motor.service';
 
 const schema = z.object({
@@ -30,8 +43,14 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function RegisterMotorScreen() {
+  const queryClient = useQueryClient();
   const [powerUnit, setPowerUnit] = useState<'HP' | 'kW'>('HP');
   const [phase, setPhase] = useState<'Single' | 'Three'>('Three');
+
+  // Photo upload states
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [isPickingImage, setIsPickingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
 
   const {
     control,
@@ -52,6 +71,25 @@ export default function RegisterMotorScreen() {
       expectedDeliveryDays: '3',
     },
   });
+
+  const handlePickImage = async (fromCamera: boolean) => {
+    try {
+      setIsPickingImage(true);
+      const uri = await mediaService.pickAndCompressImage(fromCamera);
+      if (uri) {
+        setSelectedImages((prev) => [...prev, uri]);
+      }
+    } catch (e) {
+      const err = parseApiError(e);
+      Alert.alert('Photo Selection', err.message || 'Could not select photo.');
+    } finally {
+      setIsPickingImage(false);
+    }
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setSelectedImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -77,10 +115,28 @@ export default function RegisterMotorScreen() {
         expectedDeliveryAt,
       });
 
+      // Upload selected photos if any
+      if (selectedImages.length > 0) {
+        setUploadProgress(`Uploading photos (1/${selectedImages.length})...`);
+        for (let i = 0; i < selectedImages.length; i++) {
+          setUploadProgress(`Uploading photo ${i + 1} of ${selectedImages.length}...`);
+          try {
+            await mediaService.uploadMotorImage(motor.id, selectedImages[i]);
+          } catch {
+            // Keep going if a photo fails so the motor remains registered
+          }
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: queryKeys.motors.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs.all });
+
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace(`/(app)/motors/${motor.id}`);
     } catch (e) {
       Alert.alert('Registration failed', parseApiError(e).message);
+    } finally {
+      setUploadProgress(null);
     }
   });
 
@@ -283,10 +339,64 @@ export default function RegisterMotorScreen() {
           />
         </View>
 
+        {/* MOTOR CONDITION PHOTOS */}
+        <Text style={styles.sectionHeader}>Motor Condition Photos (Optional)</Text>
+        <View style={styles.card}>
+          <Text style={styles.photoHelpText}>
+            Document the motor nameplate, burnt coils, or physical condition upon arrival.
+          </Text>
+
+          {selectedImages.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.thumbnailList}
+              style={styles.thumbnailScroll}>
+              {selectedImages.map((uri, index) => (
+                <View key={uri + index} style={styles.thumbnailWrapper}>
+                  <Image source={{ uri }} style={styles.thumbnailImage} contentFit="cover" />
+                  <Pressable
+                    hitSlop={8}
+                    style={styles.removeImageBtn}
+                    onPress={() => handleRemoveImage(index)}
+                    accessibilityLabel="Remove photo">
+                    <Ionicons name="close-circle" size={22} color={Colors.light.destructive} />
+                  </Pressable>
+                </View>
+              ))}
+            </ScrollView>
+          ) : null}
+
+          <View style={styles.photoActionsRow}>
+            <Pressable
+              style={styles.photoActionBtn}
+              disabled={isPickingImage}
+              onPress={() => handlePickImage(true)}>
+              <Ionicons name="camera-outline" size={18} color={Colors.light.primary} />
+              <Text style={styles.photoActionText}>Take Photo</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.photoActionBtn, styles.photoActionBtnSecondary]}
+              disabled={isPickingImage}
+              onPress={() => handlePickImage(false)}>
+              <Ionicons name="images-outline" size={18} color={Colors.light.primary} />
+              <Text style={styles.photoActionText}>Gallery</Text>
+            </Pressable>
+          </View>
+
+          {isPickingImage ? (
+            <View style={styles.pickingIndicator}>
+              <ActivityIndicator size="small" color={Colors.light.textSecondary} />
+              <Text style={styles.pickingText}>Compressing image...</Text>
+            </View>
+          ) : null}
+        </View>
+
         <View style={styles.submitRow}>
           <Button
-            title="Register Motor"
-            loading={isSubmitting}
+            title={uploadProgress || 'Register Motor'}
+            loading={isSubmitting || Boolean(uploadProgress)}
             onPress={onSubmit}
           />
         </View>
@@ -359,6 +469,76 @@ const styles = StyleSheet.create({
   segmentTextActive: {
     fontWeight: '700',
     color: Colors.light.text,
+  },
+  // Photo styles
+  photoHelpText: {
+    ...Typography.caption,
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.sm,
+    lineHeight: 18,
+  },
+  thumbnailScroll: {
+    marginBottom: Spacing.md,
+    maxHeight: 90,
+  },
+  thumbnailList: {
+    gap: Spacing.sm,
+    paddingVertical: 4,
+  },
+  thumbnailWrapper: {
+    position: 'relative',
+    width: 76,
+    height: 76,
+  },
+  thumbnailImage: {
+    width: 76,
+    height: 76,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.full,
+  },
+  photoActionsRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  photoActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 42,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.light.backgroundSubtle,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  photoActionBtnSecondary: {
+    backgroundColor: Colors.light.surface,
+  },
+  photoActionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.light.text,
+  },
+  pickingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+    justifyContent: 'center',
+  },
+  pickingText: {
+    fontSize: 12,
+    color: Colors.light.textSecondary,
   },
   submitRow: {
     marginTop: Spacing.lg,
