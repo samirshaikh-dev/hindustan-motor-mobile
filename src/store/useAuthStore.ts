@@ -37,22 +37,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (refreshToken) {
       await storageService.setRefreshToken(refreshToken);
     }
-    if (ownerEmployee) {
-      await storageService.setActiveActor(ownerEmployee.id, ownerEmployee.name, 'OWNER');
-      set({
-        accessToken,
-        refreshToken: refreshToken || get().refreshToken,
-        activeActorId: ownerEmployee.id,
-        activeActorName: ownerEmployee.name,
-        activeActorRole: 'OWNER',
-        isAdmin: true,
-        isLoading: false,
-      });
-      return;
-    }
+    const id = ownerEmployee?.id ?? 'admin';
+    const name = ownerEmployee?.name ?? 'Workshop Owner';
+    await storageService.setActiveActor(id, name, 'OWNER');
     set({
       accessToken,
       refreshToken: refreshToken || get().refreshToken,
+      activeActorId: id,
+      activeActorName: name,
+      activeActorRole: 'OWNER',
       isAdmin: true,
       isLoading: false,
     });

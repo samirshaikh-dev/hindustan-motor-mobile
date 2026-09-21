@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
+import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { Colors, Spacing, Typography } from '@/constants/theme';
 import { authService } from '@/services/auth.service';
@@ -15,10 +16,12 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async () => {
+    setError(null);
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Required', 'Please enter your email and password');
+      setError('Please enter your email and password');
       return;
     }
     setLoading(true);
@@ -27,8 +30,7 @@ export default function LoginScreen() {
       await setAdminSession(result.accessToken, result.refreshToken);
       router.replace('/(auth)/select-actor');
     } catch (e) {
-      const err = parseApiError(e);
-      Alert.alert('Login failed', err.message);
+      setError(parseApiError(e).message);
     } finally {
       setLoading(false);
     }
@@ -40,6 +42,8 @@ export default function LoginScreen() {
         <Text style={styles.title}>Workshop Owner</Text>
         <Text style={styles.sub}>Sign in to assign tasks and manage shop-floor staff.</Text>
       </View>
+
+      {error ? <ErrorBanner message={error} /> : null}
 
       <View style={styles.form}>
         <Input
