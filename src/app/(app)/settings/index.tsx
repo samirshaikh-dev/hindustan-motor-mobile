@@ -1,148 +1,298 @@
-import { useQuery } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-import { systemClient } from '@/api/client';
 import { Button } from '@/components/common/Button';
-import { StatusBadge } from '@/components/common/StatusBadge';
+import { Input } from '@/components/common/Input';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { ENV } from '@/config/env';
-import { queryKeys } from '@/config/queryKeys';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/useAuthStore';
 
+const DEVELOPER_INFO = {
+  name: 'Samir Shaikh',
+  phone: '+918320927182',
+  phoneDisplay: '+91 83209 27182',
+  email: 'shaikh.samir.work@gmail.com',
+};
+
 export default function SettingsScreen() {
-  const { activeActorName, activeActorRole, accessToken, logout, clearActiveActor } =
-    useAuthStore();
+  const {
+    activeActorId,
+    activeActorName,
+    activeActorRole,
+    accessToken,
+    logout,
+    setActiveActor,
+  } = useAuthStore();
 
-  const healthQuery = useQuery({
-    queryKey: queryKeys.system.health,
-    queryFn: async () => {
-      const res = await systemClient.get('/health');
-      return res.data.data;
-    },
-  });
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [profileName, setProfileName] = useState(activeActorName ?? 'Workshop Owner');
+  const [profilePhone, setProfilePhone] = useState(ENV.CONTACT_PHONE);
+  const [isSaving, setIsSaving] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
 
-  const signOut = async () => {
-    if (accessToken) {
-      await authService.logout();
+  const ownerName = activeActorName?.trim() || 'Workshop Owner';
+  const ownerInitial = ownerName.charAt(0).toUpperCase();
+
+  const handleOpenEdit = () => {
+    setProfileName(ownerName);
+    setNameError(null);
+    setEditModalVisible(true);
+  };
+
+  const handleSaveProfile = async () => {
+    const trimmed = profileName.trim();
+    if (!trimmed) {
+      setNameError('Name cannot be empty');
+      return;
     }
-    await logout();
-    router.replace('/(auth)/select-actor');
+    setIsSaving(true);
+    try {
+      if (activeActorId) {
+        await setActiveActor(activeActorId, trimmed, activeActorRole);
+      }
+      setEditModalVisible(false);
+    } catch {
+      setNameError('Failed to save profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const executeSignOut = async () => {
+    try {
+      if (accessToken) {
+        await authService.logout().catch(() => {});
+      }
+    } finally {
+      await logout();
+      router.replace('/(auth)/select-actor');
+    }
+  };
+
+  const handleSignOut = () => {
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to sign out of your account?');
+      if (confirmed) {
+        executeSignOut();
+      }
+    } else {
+      Alert.alert(
+        'Sign Out',
+        'Are you sure you want to sign out of your account?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign Out',
+            style: 'destructive',
+            onPress: executeSignOut,
+          },
+        ],
+      );
+    }
   };
 
   return (
     <ScreenWrapper>
       <View style={styles.contentWrapper}>
-        <Text style={styles.sectionHeader}>Active Profile</Text>
+        {/* ACCOUNT SECTION */}
+        <Text style={styles.sectionHeader}>ACCOUNT</Text>
         <View style={styles.group}>
           <View style={styles.profileRow}>
             <View style={styles.avatarBox}>
-              <Text style={styles.avatarText}>
-                {(activeActorName ?? 'T').charAt(0).toUpperCase()}
-              </Text>
+              <Text style={styles.avatarText}>{ownerInitial}</Text>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{activeActorName ?? 'Technician'}</Text>
-              <Text style={styles.profileRole}>Shop-Floor Actor</Text>
+              <Text style={styles.profileName}>{ownerName}</Text>
+              <Text style={styles.profileRole}>Shop Owner</Text>
             </View>
-            <StatusBadge status={activeActorRole} />
+            <View style={styles.roleBadge}>
+              <Text style={styles.roleBadgeText}>OWNER</Text>
+            </View>
           </View>
 
           <Pressable
-            style={({ pressed }) => [styles.actionRow, styles.rowBorder, pressed && styles.rowPressed]}
-            onPress={async () => {
-              await clearActiveActor();
-              router.replace('/(auth)/select-actor');
-            }}>
-            <Text style={styles.actionText}>Switch Shop-Floor Profile</Text>
-            <Text style={styles.chevron}>›</Text>
+            accessibilityRole="button"
+            accessibilityLabel="Edit Profile"
+            style={({ pressed }) => [
+              styles.actionRow,
+              styles.rowBorder,
+              pressed && styles.rowPressed,
+            ]}
+            onPress={handleOpenEdit}>
+            <Text style={styles.actionText}>Edit Profile</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.light.textMuted} />
           </Pressable>
-
-          {!accessToken ? (
-            <Pressable
-              style={({ pressed }) => [styles.actionRow, styles.rowBorder, pressed && styles.rowPressed]}
-              onPress={() => router.push('/(auth)/login')}>
-              <Text style={styles.actionText}>Sign In as Workshop Owner</Text>
-              <Text style={styles.chevron}>›</Text>
-            </Pressable>
-          ) : null}
         </View>
 
-        <Text style={styles.sectionHeader}>Workshop Support</Text>
+        {/* SUPPORT SECTION */}
+        <Text style={styles.sectionHeader}>SUPPORT</Text>
         <View style={styles.group}>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Call Workshop Support"
             style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
             onPress={() => Linking.openURL(`tel:${ENV.CONTACT_PHONE}`)}>
-            <View>
-              <Text style={styles.actionText}>Call Workshop Line</Text>
-              <Text style={styles.metaText}>{ENV.CONTACT_PHONE}</Text>
+            <View style={styles.rowLabelGroup}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="call-outline" size={18} color={Colors.light.primary} />
+              </View>
+              <View>
+                <Text style={styles.actionText}>Call Support</Text>
+                <Text style={styles.metaText}>{ENV.CONTACT_PHONE}</Text>
+              </View>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.light.textMuted} />
           </Pressable>
 
           <Pressable
-            style={({ pressed }) => [styles.actionRow, styles.rowBorder, pressed && styles.rowPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="WhatsApp Support"
+            style={({ pressed }) => [
+              styles.actionRow,
+              styles.rowBorder,
+              pressed && styles.rowPressed,
+            ]}
             onPress={() => Linking.openURL(ENV.WHATSAPP_URL)}>
-            <View>
-              <Text style={styles.actionText}>WhatsApp Support</Text>
-              <Text style={styles.metaText}>Message workshop coordinator</Text>
+            <View style={styles.rowLabelGroup}>
+              <View style={styles.iconCircle}>
+                <Ionicons name="logo-whatsapp" size={18} color={Colors.light.success} />
+              </View>
+              <View>
+                <Text style={styles.actionText}>WhatsApp Support</Text>
+                <Text style={styles.metaText}>Chat with support</Text>
+              </View>
             </View>
-            <Text style={styles.chevron}>›</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.light.textMuted} />
           </Pressable>
         </View>
 
-        <Text style={styles.sectionHeader}>System Diagnostics & Audit</Text>
-        <View style={styles.group}>
-          <Pressable
-            style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
-            onPress={() => router.push('/(app)/history')}>
-            <Text style={styles.actionText}>View Workshop Audit Log</Text>
-            <Text style={styles.chevron}>›</Text>
-          </Pressable>
+        {/* DEVELOPER SECTION */}
+        <Text style={styles.sectionHeader}>APP DEVELOPER</Text>
+        <View style={styles.developerCard}>
+          <Text style={styles.developerName}>{DEVELOPER_INFO.name}</Text>
 
-          <View style={[styles.infoRow, styles.rowBorder]}>
-            <Text style={styles.infoLabel}>Backend API Status</Text>
-            <Text
-              style={[
-                styles.infoValue,
-                {
-                  color:
-                    healthQuery.data?.status === 'healthy'
-                      ? Colors.light.success
-                      : Colors.light.textSecondary,
-                },
-              ]}>
-              {healthQuery.isLoading
-                ? 'Checking...'
-                : healthQuery.data?.status === 'healthy'
-                  ? 'Healthy (Online)'
-                  : 'Degraded / Offline'}
-            </Text>
-          </View>
+          <View style={styles.developerContactList}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Call developer ${DEVELOPER_INFO.phoneDisplay}`}
+              style={({ pressed }) => [
+                styles.developerContactRow,
+                pressed && styles.contactPressed,
+              ]}
+              onPress={() => Linking.openURL(`tel:${DEVELOPER_INFO.phone}`)}>
+              <Ionicons name="call-outline" size={14} color={Colors.light.textSecondary} />
+              <Text style={styles.developerContactText}>{DEVELOPER_INFO.phoneDisplay}</Text>
+            </Pressable>
 
-          <View style={[styles.infoRow, styles.rowBorder]}>
-            <Text style={styles.infoLabel}>API Server URL</Text>
-            <Text style={styles.infoValue} numberOfLines={1}>
-              {ENV.API_BASE_URL}
-            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Email developer ${DEVELOPER_INFO.email}`}
+              style={({ pressed }) => [
+                styles.developerContactRow,
+                pressed && styles.contactPressed,
+              ]}
+              onPress={() => Linking.openURL(`mailto:${DEVELOPER_INFO.email}`)}>
+              <Ionicons name="mail-outline" size={14} color={Colors.light.textSecondary} />
+              <Text style={styles.developerContactText}>{DEVELOPER_INFO.email}</Text>
+            </Pressable>
           </View>
         </View>
 
+        {/* ACCOUNT ACTION SECTION */}
         <View style={styles.logoutSection}>
           <Button
-            title={accessToken ? 'Sign Out of Owner Account' : 'Exit Shop-Floor Profile'}
+            title="Sign Out of Account"
             variant="destructive"
-            onPress={signOut}
+            onPress={handleSignOut}
           />
         </View>
 
+        {/* FOOTER */}
         <View style={styles.footer}>
-          <Text style={styles.footerBrand}>Hindustan Electricals Winding Works</Text>
-          <Text style={styles.footerVersion}>v1.0.0 • Mobile Production Build</Text>
+          <Text style={styles.footerVersion}>App Version {ENV.APP_VERSION}</Text>
         </View>
       </View>
+
+      {/* EDIT PROFILE MODAL */}
+      <Modal
+        visible={editModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditModalVisible(false)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+                hitSlop={8}
+                onPress={() => setEditModalVisible(false)}>
+                <Ionicons name="close" size={22} color={Colors.light.textSecondary} />
+              </Pressable>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Input
+                label="Owner Name"
+                value={profileName}
+                onChangeText={(text) => {
+                  setProfileName(text);
+                  if (nameError) setNameError(null);
+                }}
+                error={nameError ?? undefined}
+                placeholder="Enter your name"
+                autoCapitalize="words"
+              />
+
+              <Input
+                label="Phone Number"
+                value={profilePhone}
+                onChangeText={setProfilePhone}
+                placeholder="+91 XXXXX XXXXX"
+                keyboardType="phone-pad"
+              />
+
+              <View style={styles.modalRoleRow}>
+                <Text style={styles.modalRoleLabel}>Role</Text>
+                <Text style={styles.modalRoleValue}>Shop Owner (Admin)</Text>
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <Button
+                title="Cancel"
+                variant="ghost"
+                style={styles.modalBtn}
+                onPress={() => setEditModalVisible(false)}
+              />
+              <Button
+                title="Save Changes"
+                variant="primary"
+                loading={isSaving}
+                style={styles.modalBtn}
+                onPress={handleSaveProfile}
+              />
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </ScreenWrapper>
   );
 }
@@ -150,19 +300,20 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   contentWrapper: {
     width: '100%',
-    maxWidth: 600,
+    maxWidth: 540,
     alignSelf: 'center',
-    paddingBottom: Spacing.xl,
+    paddingBottom: Spacing.xxl,
   },
   sectionHeader: {
-    ...Typography.headline,
-    fontSize: 13,
+    ...Typography.caption,
+    fontSize: 12,
     fontWeight: '600',
     color: Colors.light.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginTop: Spacing.lg,
+    letterSpacing: 0.6,
+    marginTop: Spacing.xl,
     marginBottom: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
   },
   group: {
     backgroundColor: Colors.light.surface,
@@ -179,8 +330,8 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   avatarBox: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: Radius.full,
     backgroundColor: Colors.light.surfaceSubtle,
     borderWidth: 1,
@@ -190,7 +341,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     ...Typography.headline,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.light.primary,
   },
@@ -200,14 +351,29 @@ const styles = StyleSheet.create({
   profileName: {
     ...Typography.headline,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
     color: Colors.light.text,
   },
   profileRole: {
     ...Typography.subhead,
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.light.textSecondary,
-    marginTop: 1,
+    marginTop: 2,
+  },
+  roleBadge: {
+    backgroundColor: Colors.light.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.full,
+  },
+  roleBadgeText: {
+    ...Typography.caption,
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.light.text,
+    letterSpacing: 0.5,
   },
   actionRow: {
     flexDirection: 'row',
@@ -215,13 +381,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
+    minHeight: 52,
   },
   rowBorder: {
     borderTopWidth: 1,
     borderTopColor: Colors.light.borderSubtle,
   },
   rowPressed: {
-    backgroundColor: Colors.light.secondary,
+    backgroundColor: Colors.light.surfaceSubtle,
+  },
+  rowLabelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.light.surfaceSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionText: {
     ...Typography.headline,
@@ -230,52 +410,125 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   metaText: {
-    ...Typography.caption,
+    ...Typography.subhead,
     fontSize: 12,
     color: Colors.light.textSecondary,
     marginTop: 2,
   },
-  chevron: {
-    fontSize: 18,
+  developerCard: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: Spacing.lg,
+  },
+  developerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  developerHeading: {
+    ...Typography.caption,
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  developerName: {
+    ...Typography.headline,
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.light.text,
+    marginBottom: Spacing.sm,
+  },
+  developerContactList: {
+    gap: Spacing.xs,
+  },
+  developerContactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  contactPressed: {
+    opacity: 0.6,
+  },
+  developerContactText: {
+    ...Typography.body,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+  },
+  logoutSection: {
+    marginTop: Spacing.xxl,
+    marginBottom: Spacing.md,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+  },
+  footerVersion: {
+    ...Typography.caption,
+    fontSize: 12,
     color: Colors.light.textMuted,
   },
-  infoRow: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.lg,
+  },
+  modalContainer: {
+    width: '100%',
+    maxWidth: 440,
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    padding: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
   },
-  infoLabel: {
+  modalTitle: {
+    ...Typography.headline,
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
+  modalBody: {
+    marginBottom: Spacing.md,
+  },
+  modalRoleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+  },
+  modalRoleLabel: {
     ...Typography.subhead,
     fontSize: 13,
     color: Colors.light.textSecondary,
   },
-  infoValue: {
-    ...Typography.headline,
+  modalRoleValue: {
+    ...Typography.subhead,
     fontSize: 13,
-    color: Colors.light.text,
-    maxWidth: '60%',
-    textAlign: 'right',
-  },
-  logoutSection: {
-    marginTop: Spacing.xxl,
-    marginBottom: Spacing.lg,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    gap: Spacing.xs,
-  },
-  footerBrand: {
-    ...Typography.caption,
-    fontSize: 12,
     fontWeight: '600',
-    color: Colors.light.textSecondary,
+    color: Colors.light.text,
   },
-  footerVersion: {
-    ...Typography.caption,
-    fontSize: 11,
-    color: Colors.light.textMuted,
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  modalBtn: {
+    minWidth: 90,
   },
 });
