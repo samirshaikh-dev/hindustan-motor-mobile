@@ -35,6 +35,7 @@ export default function SettingsScreen() {
     activeActorRole,
     accessToken,
     logout,
+    clearActiveActor,
     setActiveActor,
   } = useAuthStore();
 
@@ -81,6 +82,11 @@ export default function SettingsScreen() {
       await logout();
       router.replace('/(auth)/select-actor');
     }
+  };
+
+  const handleSwitchProfile = async () => {
+    await clearActiveActor();
+    router.replace('/(auth)/select-actor');
   };
 
   const handleSignOut = () => {
@@ -214,6 +220,12 @@ export default function SettingsScreen() {
 
         {/* ACCOUNT ACTION SECTION */}
         <View style={styles.logoutSection}>
+          <Button
+            title="Switch Profile"
+            variant="secondary"
+            onPress={handleSwitchProfile}
+          />
+          <View style={{ height: Spacing.sm }} />
           <Button
             title="Sign Out of Account"
             variant="destructive"

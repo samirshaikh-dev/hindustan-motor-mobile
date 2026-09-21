@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -30,8 +31,7 @@ export default function SelectActorScreen() {
   const { data, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: queryKeys.employees.list({ isActive: true }),
     queryFn: () => employeeService.list({ isActive: true, limit: 100 }),
-    enabled: !!accessToken || !!activeActorId,
-    retry: false,
+    enabled: showStaffRoster,
   });
 
   const onSelect = async (employee: Employee) => {
@@ -39,25 +39,16 @@ export default function SelectActorScreen() {
       await setActiveActor(employee.id, employee.name, employee.role);
       router.replace('/(app)');
     } catch (e) {
-      Alert.alert('Error', parseApiError(e).message);
+      const msg = parseApiError(e).message;
+      if (Platform.OS === 'web') {
+        window.alert(msg);
+      } else {
+        Alert.alert('Error', msg);
+      }
     }
   };
 
   const handleStaffProfilePress = () => {
-    if (!accessToken && !activeActorId) {
-      Alert.alert(
-        'Owner Sign In Required',
-        'Sign in as Workshop Owner once to load the staff roster onto this device.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Owner Sign In',
-            onPress: () => router.push('/(auth)/login'),
-          },
-        ],
-      );
-      return;
-    }
     setShowStaffRoster((prev) => !prev);
   };
 
