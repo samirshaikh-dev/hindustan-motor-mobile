@@ -4,9 +4,11 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'rea
 
 import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
+import { StatusBadge } from '@/components/common/StatusBadge';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { queryKeys } from '@/config/queryKeys';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { employeeService } from '@/services/employee.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { Employee } from '@/types/domain';
@@ -34,36 +36,49 @@ export default function SelectActorScreen() {
 
   return (
     <ScreenWrapper
-      showContactCta
       refreshing={isRefetching}
       onRefresh={() => refetch()}
-      contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Hindustan Electricals</Text>
-      <Text style={styles.sub}>Select your shop-floor profile to continue.</Text>
+      contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Hindustan Electricals</Text>
+        <Text style={styles.sub}>Select your shop-floor profile</Text>
+      </View>
 
       {!accessToken && !activeActorId ? (
-        <View style={styles.box}>
+        <View style={styles.unauthedBox}>
           <Text style={styles.hint}>
-            Sign in as owner once to load the team roster, then select your shop-floor profile.
+            Sign in as Workshop Owner once to load the staff roster, then select your floor profile.
           </Text>
-          <Button title="Owner login" onPress={() => router.push('/(auth)/login')} />
+          <Button title="Owner Sign In" onPress={() => router.push('/(auth)/login')} />
         </View>
       ) : isLoading ? (
-        <ActivityIndicator size="large" color="#0284c7" />
+        <View style={styles.loadingBox}>
+          <ActivityIndicator size="small" color={Colors.light.textSecondary} />
+        </View>
       ) : error ? (
         <ErrorBanner message={parseApiError(error).message} onRetry={() => refetch()} />
       ) : (
-        <View style={styles.list}>
-          {(data?.employees ?? []).map((emp) => (
-            <Pressable key={emp.id} style={styles.card} onPress={() => onSelect(emp)}>
-              <Text style={styles.name}>{emp.name}</Text>
-              <Text style={styles.meta}>
-                {emp.role} · {emp.phone}
-              </Text>
+        <View style={styles.group}>
+          {(data?.employees ?? []).map((emp, index) => (
+            <Pressable
+              key={emp.id}
+              style={({ pressed }) => [
+                styles.row,
+                index > 0 && styles.rowBorder,
+                pressed && styles.rowPressed,
+              ]}
+              onPress={() => onSelect(emp)}>
+              <View style={styles.rowInfo}>
+                <Text style={styles.name}>{emp.name}</Text>
+                <Text style={styles.meta}>{emp.phone}</Text>
+              </View>
+              <StatusBadge status={emp.role} />
             </Pressable>
           ))}
           {(data?.employees?.length ?? 0) === 0 ? (
-            <Text style={styles.hint}>No active employees. Add staff from the Employees tab after sign-in.</Text>
+            <View style={styles.emptyBox}>
+              <Text style={styles.hint}>No active employees found.</Text>
+            </View>
           ) : null}
         </View>
       )}
@@ -72,19 +87,77 @@ export default function SelectActorScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 24 },
-  title: { fontSize: 26, fontWeight: '800', color: '#0f172a' },
-  sub: { color: '#64748b', marginTop: 8, marginBottom: 20 },
-  box: { gap: 12 },
-  hint: { color: '#64748b', lineHeight: 22 },
-  list: { gap: 10 },
-  card: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+  container: {
+    paddingTop: Spacing.xxl,
   },
-  name: { fontSize: 17, fontWeight: '700', color: '#0f172a' },
-  meta: { color: '#64748b', marginTop: 4 },
+  header: {
+    marginBottom: Spacing.xl,
+  },
+  title: {
+    ...Typography.title,
+    color: Colors.light.text,
+  },
+  sub: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+    marginTop: Spacing.xs,
+  },
+  unauthedBox: {
+    backgroundColor: Colors.light.surface,
+    padding: Spacing.lg,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    gap: Spacing.md,
+  },
+  hint: {
+    ...Typography.body,
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    lineHeight: 20,
+  },
+  loadingBox: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  group: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+  },
+  rowPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  rowInfo: {
+    flex: 1,
+    marginRight: Spacing.md,
+  },
+  name: {
+    ...Typography.headline,
+    fontSize: 15,
+    color: Colors.light.text,
+  },
+  meta: {
+    ...Typography.subhead,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
+  emptyBox: {
+    padding: Spacing.lg,
+    alignItems: 'center',
+  },
 });

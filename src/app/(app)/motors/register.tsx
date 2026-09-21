@@ -10,6 +10,7 @@ import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { motorService } from '@/services/motor.service';
 
 const schema = z.object({
@@ -79,20 +80,19 @@ export default function RegisterMotorScreen() {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace(`/(app)/motors/${motor.id}`);
     } catch (e) {
-      Alert.alert('Could not register', parseApiError(e).message);
+      Alert.alert('Registration failed', parseApiError(e).message);
     }
   });
 
   return (
     <ScreenWrapper>
-      <Text style={styles.title}>New motor intake</Text>
-
       <Controller
         control={control}
         name="customerName"
         render={({ field: { onChange, value } }) => (
           <Input
-            label="Customer name"
+            label="Customer Name"
+            placeholder="e.g. Ramesh Patel"
             value={value}
             onChangeText={onChange}
             error={errors.customerName?.message}
@@ -105,7 +105,8 @@ export default function RegisterMotorScreen() {
         name="customerPhone"
         render={({ field: { onChange, value } }) => (
           <Input
-            label="Customer phone"
+            label="Customer Phone"
+            placeholder="e.g. 9825012345"
             keyboardType="phone-pad"
             value={value}
             onChangeText={onChange}
@@ -120,7 +121,12 @@ export default function RegisterMotorScreen() {
             control={control}
             name="brand"
             render={({ field: { onChange, value } }) => (
-              <Input label="Brand" placeholder="e.g. Crompton" value={value} onChangeText={onChange} />
+              <Input
+                label="Brand"
+                placeholder="e.g. Crompton"
+                value={value}
+                onChangeText={onChange}
+              />
             )}
           />
         </View>
@@ -129,7 +135,12 @@ export default function RegisterMotorScreen() {
             control={control}
             name="motorType"
             render={({ field: { onChange, value } }) => (
-              <Input label="Motor type" placeholder="e.g. Induction" value={value} onChangeText={onChange} />
+              <Input
+                label="Motor Type"
+                placeholder="e.g. Induction"
+                value={value}
+                onChangeText={onChange}
+              />
             )}
           />
         </View>
@@ -143,6 +154,7 @@ export default function RegisterMotorScreen() {
             render={({ field: { onChange, value } }) => (
               <Input
                 label={`Power (${powerUnit})`}
+                placeholder="e.g. 5"
                 keyboardType="numeric"
                 value={value}
                 onChangeText={onChange}
@@ -151,14 +163,18 @@ export default function RegisterMotorScreen() {
           />
         </View>
         <View style={styles.half}>
-          <Text style={styles.sublabel}>Unit</Text>
+          <Text style={styles.segmentLabel}>Unit</Text>
           <View style={styles.segment}>
             {(['HP', 'kW'] as const).map((unit) => (
               <Pressable
                 key={unit}
                 style={[styles.segmentBtn, powerUnit === unit && styles.segmentBtnActive]}
                 onPress={() => setPowerUnit(unit)}>
-                <Text style={[styles.segmentText, powerUnit === unit && styles.segmentTextActive]}>
+                <Text
+                  style={[
+                    styles.segmentText,
+                    powerUnit === unit && styles.segmentTextActive,
+                  ]}>
                   {unit}
                 </Text>
               </Pressable>
@@ -173,19 +189,29 @@ export default function RegisterMotorScreen() {
             control={control}
             name="rpm"
             render={({ field: { onChange, value } }) => (
-              <Input label="RPM" placeholder="1440 / 2880" keyboardType="numeric" value={value} onChangeText={onChange} />
+              <Input
+                label="RPM"
+                placeholder="1440 / 2880"
+                keyboardType="numeric"
+                value={value}
+                onChangeText={onChange}
+              />
             )}
           />
         </View>
         <View style={styles.half}>
-          <Text style={styles.sublabel}>Phase</Text>
+          <Text style={styles.segmentLabel}>Phase</Text>
           <View style={styles.segment}>
             {(['Single', 'Three'] as const).map((p) => (
               <Pressable
                 key={p}
                 style={[styles.segmentBtn, phase === p && styles.segmentBtnActive]}
                 onPress={() => setPhase(p)}>
-                <Text style={[styles.segmentText, phase === p && styles.segmentTextActive]}>
+                <Text
+                  style={[
+                    styles.segmentText,
+                    phase === p && styles.segmentTextActive,
+                  ]}>
                   {p}
                 </Text>
               </Pressable>
@@ -198,7 +224,12 @@ export default function RegisterMotorScreen() {
         control={control}
         name="serialNumber"
         render={({ field: { onChange, value } }) => (
-          <Input label="Serial / Model No. (optional)" value={value} onChangeText={onChange} />
+          <Input
+            label="Serial / Model No. (optional)"
+            placeholder="e.g. MTR-2024-001"
+            value={value}
+            onChangeText={onChange}
+          />
         )}
       />
 
@@ -207,7 +238,8 @@ export default function RegisterMotorScreen() {
         name="expectedDeliveryDays"
         render={({ field: { onChange, value } }) => (
           <Input
-            label="Expected delivery (days from today)"
+            label="Expected Delivery (days from today)"
+            placeholder="3"
             keyboardType="numeric"
             value={value}
             onChangeText={onChange}
@@ -220,8 +252,9 @@ export default function RegisterMotorScreen() {
         name="complaint"
         render={({ field: { onChange, value } }) => (
           <Input
-            label="Complaint / Problem description"
+            label="Problem Description / Complaint"
             multiline
+            numberOfLines={3}
             placeholder="e.g. Burnt coil, smoke observed, bearing seized"
             value={value}
             onChangeText={onChange}
@@ -233,45 +266,73 @@ export default function RegisterMotorScreen() {
         control={control}
         name="notes"
         render={({ field: { onChange, value } }) => (
-          <Input label="Internal notes (optional)" multiline value={value} onChangeText={onChange} />
+          <Input
+            label="Internal Notes (optional)"
+            multiline
+            placeholder="e.g. Customer requested quick turnaround"
+            value={value}
+            onChangeText={onChange}
+          />
         )}
       />
 
-      <Button title="Register & create job" loading={isSubmitting} onPress={onSubmit} />
+      <View style={styles.submitRow}>
+        <Button
+          title="Register & Create Job"
+          loading={isSubmitting}
+          onPress={onSubmit}
+        />
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '800', marginBottom: 16 },
-  row: { flexDirection: 'row', gap: 10 },
-  half: { flex: 1 },
-  sublabel: { fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 6 },
+  row: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  half: {
+    flex: 1,
+  },
+  segmentLabel: {
+    ...Typography.subhead,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.xs,
+  },
   segment: {
     flexDirection: 'row',
-    backgroundColor: '#e2e8f0',
-    borderRadius: 8,
-    padding: 3,
-    height: 44,
+    backgroundColor: Colors.light.secondary,
+    borderRadius: Radius.md,
+    padding: 2,
+    height: 42,
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   segmentBtn: {
     flex: 1,
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 6,
+    borderRadius: Radius.sm,
   },
   segmentBtnActive: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.light.surface,
   },
   segmentText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#64748b',
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
   },
   segmentTextActive: {
-    color: '#0f172a',
+    fontWeight: '600',
+    color: Colors.light.text,
+  },
+  submitRow: {
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.xxl,
   },
 });

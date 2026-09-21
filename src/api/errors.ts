@@ -5,7 +5,7 @@ import type { ApiErrorResponse } from '@/types/api';
 export interface AppError {
   message: string;
   code: string;
-  validationErrors?: Array<{ field: string; message: string }>;
+  validationErrors?: { field: string; message: string }[];
   isNetworkError: boolean;
 }
 

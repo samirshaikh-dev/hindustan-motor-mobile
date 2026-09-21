@@ -1,5 +1,6 @@
 import { Redirect, Stack } from 'expo-router';
 
+import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export default function AuthLayout() {
@@ -10,7 +11,20 @@ export default function AuthLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: true, title: 'Workshop Sign In' }}>
+    <Stack
+      screenOptions={{
+        headerShown: true,
+        title: 'Workshop Sign In',
+        headerTintColor: Colors.light.primary,
+        headerBackTitle: 'Back',
+        headerShadowVisible: false,
+        headerStyle: {
+          backgroundColor: Colors.light.background,
+        },
+        headerTitleStyle: {
+          fontWeight: '600',
+        },
+      }}>
       <Stack.Screen name="select-actor" options={{ title: 'Select Profile' }} />
       <Stack.Screen name="login" options={{ title: 'Owner Login' }} />
     </Stack>

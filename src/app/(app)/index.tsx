@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import {
   ActivityIndicator,
@@ -13,10 +14,10 @@ import { Button } from '@/components/common/Button';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { queryKeys } from '@/config/queryKeys';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useEmployeeStatusDashboard } from '@/hooks/useEmployees';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '@/config/queryKeys';
 
 export default function DashboardScreen() {
   const name = useAuthStore((s) => s.activeActorName);
@@ -37,24 +38,30 @@ export default function DashboardScreen() {
 
   const team = statusQuery.data ?? [];
   const activeStaffCount = team.filter((e) => e.isActive).length;
-  const totalActiveTasks = team.reduce((acc, curr) => acc + (curr.activeTaskCount || 0), 0);
+  const totalActiveTasks = team.reduce(
+    (acc, curr) => acc + (curr.activeTaskCount || 0),
+    0
+  );
 
   return (
     <ScreenWrapper
-      showContactCta
       refreshing={statusQuery.isRefetching}
       onRefresh={() => {
         statusQuery.refetch();
         healthQuery.refetch();
       }}>
       <View style={styles.topHeader}>
-        <Text style={styles.greeting}>Welcome, {name ?? 'Technician'}</Text>
+        <View style={styles.greetingCol}>
+          <Text style={styles.greeting}>{name ?? 'Technician'}</Text>
+          <Text style={styles.sub}>Floor Overview</Text>
+        </View>
         <StatusBadge status={role} />
       </View>
-      <Text style={styles.sub}>Hindustan Electricals Winding Works — Floor Overview</Text>
 
       {loading ? (
-        <ActivityIndicator color="#0284c7" style={{ marginTop: 24 }} />
+        <View style={styles.loadingBox}>
+          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+        </View>
       ) : error ? (
         <ErrorBanner
           message={parseApiError(error).message}
@@ -65,59 +72,56 @@ export default function DashboardScreen() {
         />
       ) : (
         <>
-          <View style={styles.kpiRow}>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Active Tasks</Text>
-              <Text style={styles.kpiValue}>{totalActiveTasks}</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Active Tasks</Text>
+              <Text style={styles.statVal}>{totalActiveTasks}</Text>
             </View>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Floor Staff</Text>
-              <Text style={styles.kpiValue}>{activeStaffCount}</Text>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Floor Staff</Text>
+              <Text style={styles.statVal}>{activeStaffCount}</Text>
             </View>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiLabel}>Server</Text>
-              <Text style={[styles.kpiValue, styles.kpiOnline]}>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Backend</Text>
+              <Text style={styles.statVal}>
                 {healthQuery.data?.status === 'healthy' ? 'Online' : 'Offline'}
               </Text>
             </View>
           </View>
 
-          <View style={styles.quickActions}>
+          <View style={styles.primaryAction}>
             <Button
               title="Register Incoming Motor"
               onPress={() => router.push('/(app)/motors/register')}
             />
-            <View style={styles.actionRow}>
-              <View style={styles.half}>
-                <Button
-                  title="Jobs Board"
-                  variant="secondary"
-                  onPress={() => router.push('/(app)/jobs')}
-                />
-              </View>
-              <View style={styles.half}>
-                <Button
-                  title="Audit Log"
-                  variant="secondary"
-                  onPress={() => router.push('/(app)/history')}
-                />
-              </View>
-            </View>
           </View>
 
-          <Text style={styles.section}>Team Workload</Text>
-          {team.map((row) => (
-            <Pressable
-              key={row.id}
-              style={styles.row}
-              onPress={() => router.push(`/(app)/employees/${row.id}`)}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{row.name}</Text>
-                <Text style={styles.meta}>{row.activeTaskCount ?? 0} active task(s)</Text>
-              </View>
-              <StatusBadge status={row.role} />
-            </Pressable>
-          ))}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Team Workload</Text>
+          </View>
+
+          <View style={styles.group}>
+            {team.map((row, index) => (
+              <Pressable
+                key={row.id}
+                style={({ pressed }) => [
+                  styles.teamRow,
+                  index > 0 && styles.rowBorder,
+                  pressed && styles.rowPressed,
+                ]}
+                onPress={() => router.push(`/(app)/employees/${row.id}`)}>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.name}>{row.name}</Text>
+                  <Text style={styles.taskMeta}>
+                    {row.activeTaskCount ?? 0} active task{row.activeTaskCount === 1 ? '' : 's'}
+                  </Text>
+                </View>
+                <StatusBadge status={row.role} />
+              </Pressable>
+            ))}
+          </View>
         </>
       )}
     </ScreenWrapper>
@@ -129,36 +133,101 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: Spacing.lg,
   },
-  greeting: { fontSize: 22, fontWeight: '800', color: '#0f172a' },
-  sub: { color: '#64748b', fontSize: 13, marginTop: 4, marginBottom: 16 },
-  kpiRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  kpiCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+  greetingCol: {
+    gap: 2,
+  },
+  greeting: {
+    ...Typography.title,
+    color: Colors.light.text,
+  },
+  sub: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+  },
+  loadingBox: {
+    paddingVertical: Spacing.xxxl,
     alignItems: 'center',
   },
-  kpiLabel: { fontSize: 11, color: '#64748b', fontWeight: '700', textTransform: 'uppercase' },
-  kpiValue: { fontSize: 20, fontWeight: '800', color: '#0f172a', marginTop: 4 },
-  kpiOnline: { color: '#16a34a' },
-  quickActions: { gap: 8, marginBottom: 20 },
-  actionRow: { flexDirection: 'row', gap: 10 },
-  half: { flex: 1 },
-  section: { fontWeight: '700', fontSize: 17, marginBottom: 10, color: '#0f172a' },
-  row: {
+  statsRow: {
+    flexDirection: 'row',
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    paddingVertical: Spacing.md,
+    marginBottom: Spacing.lg,
+    alignItems: 'center',
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: Colors.light.borderSubtle,
+  },
+  statLabel: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  statVal: {
+    ...Typography.headline,
+    ...Typography.tabular,
+    color: Colors.light.text,
+    marginTop: 2,
+  },
+  primaryAction: {
+    marginBottom: Spacing.xl,
+  },
+  sectionHeader: {
+    marginBottom: Spacing.sm,
+  },
+  sectionTitle: {
+    ...Typography.headline,
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  group: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
+  },
+  teamRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
   },
-  name: { fontWeight: '700', fontSize: 15, color: '#0f172a' },
-  meta: { color: '#64748b', fontSize: 13, marginTop: 2 },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+  },
+  rowPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  rowInfo: {
+    flex: 1,
+    marginRight: Spacing.md,
+  },
+  name: {
+    ...Typography.headline,
+    fontSize: 15,
+    color: Colors.light.text,
+  },
+  taskMeta: {
+    ...Typography.subhead,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
 });

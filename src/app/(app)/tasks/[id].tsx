@@ -17,6 +17,7 @@ import { Button } from '@/components/common/Button';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAssignTask, useTaskDetail, useUpdateTaskStatus } from '@/hooks/useTasks';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -56,7 +57,7 @@ export default function TaskDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#0284c7" size="large" />
+        <ActivityIndicator color={Colors.light.textSecondary} size="small" />
       </View>
     );
   }
@@ -76,40 +77,44 @@ export default function TaskDetailScreen() {
         <StatusBadge status={data.status} />
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Assigned Technician</Text>
-        <Text style={styles.cardValue}>
-          {data.assignedEmployee ? data.assignedEmployee.name : 'Unassigned'}
-        </Text>
-        {data.assignedEmployee?.phone ? (
-          <Text style={styles.phoneText}>{data.assignedEmployee.phone}</Text>
-        ) : null}
-
-        {isOwner ? (
-          <View style={styles.assignBtnRow}>
+      {/* Assigned Technician */}
+      <View style={styles.group}>
+        <View style={styles.groupRow}>
+          <View style={styles.rowMain}>
+            <Text style={styles.rowLabel}>Assigned Technician</Text>
+            <Text style={styles.rowValue}>
+              {data.assignedEmployee ? data.assignedEmployee.name : 'Unassigned'}
+            </Text>
+            {data.assignedEmployee?.phone ? (
+              <Text style={styles.phoneText}>{data.assignedEmployee.phone}</Text>
+            ) : null}
+          </View>
+          {isOwner ? (
             <Button
-              title={data.assignedEmployee ? 'Reassign Staff' : 'Assign to Staff'}
+              title={data.assignedEmployee ? 'Reassign' : 'Assign'}
               variant="secondary"
               onPress={() => setAssignModalVisible(true)}
             />
-          </View>
-        ) : null}
+          ) : null}
+        </View>
       </View>
 
+      {/* Instructions */}
       {data.description ? (
-        <View style={styles.card}>
-          <Text style={styles.cardLabel}>Instructions / Description</Text>
+        <View style={styles.box}>
+          <Text style={styles.boxLabel}>Instructions</Text>
           <Text style={styles.desc}>{data.description}</Text>
         </View>
       ) : null}
 
+      {/* Linked Job */}
       {data.job ? (
         <Pressable
-          style={styles.jobCard}
+          style={({ pressed }) => [styles.box, pressed && styles.boxPressed]}
           onPress={() => router.push(`/(app)/jobs/${data.jobId}`)}>
-          <View style={styles.jobHeader}>
-            <Text style={styles.cardLabel}>Linked Job</Text>
-            <Text style={styles.linkText}>View Job Details →</Text>
+          <View style={styles.boxHeader}>
+            <Text style={styles.boxLabel}>Linked Job Order</Text>
+            <Text style={styles.linkText}>View Job →</Text>
           </View>
           <Text style={styles.jobNum}>{data.job.jobNumber}</Text>
           {data.job.motor ? (
@@ -120,6 +125,7 @@ export default function TaskDetailScreen() {
         </Pressable>
       ) : null}
 
+      {/* Timestamps */}
       <View style={styles.timelineBox}>
         <Text style={styles.timeMeta}>Created: {formatDateTime(data.createdAt)}</Text>
         {data.startedAt ? (
@@ -130,6 +136,7 @@ export default function TaskDetailScreen() {
         ) : null}
       </View>
 
+      {/* One primary call to action */}
       <View style={styles.actionSection}>
         {data.status === 'ASSIGNED' ? (
           <Button
@@ -150,36 +157,43 @@ export default function TaskDetailScreen() {
         {isOwner && data.status !== 'COMPLETED' && data.status !== 'CANCELLED' ? (
           <Button
             title="Cancel Task"
-            variant="danger"
+            variant="destructive"
             loading={updateStatusMutation.isPending}
             onPress={() => setStatus('CANCELLED')}
           />
         ) : null}
       </View>
 
-      {/* Owner Employee Selection Modal */}
-      <Modal visible={assignModalVisible} transparent animationType="slide">
+      {/* Staff Assignment Modal */}
+      <Modal visible={assignModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Assign Task to Staff</Text>
+            <Text style={styles.modalTitle}>Assign Task</Text>
             <Text style={styles.modalSub}>Select a technician on the shop floor:</Text>
 
             <ScrollView style={styles.empList}>
-              {(employeesQuery.data?.employees ?? []).map((emp) => (
-                <Pressable
-                  key={emp.id}
-                  style={[
-                    styles.empRow,
-                    data.assignedEmployeeId === emp.id && styles.empRowSelected,
-                  ]}
-                  onPress={() => handleAssign(emp.id)}>
-                  <View>
-                    <Text style={styles.empName}>{emp.name}</Text>
-                    <Text style={styles.empPhone}>{emp.phone}</Text>
-                  </View>
-                  <StatusBadge status={emp.role} />
-                </Pressable>
-              ))}
+              <View style={styles.group}>
+                {(employeesQuery.data?.employees ?? []).map((emp, index) => {
+                  const isSelected = data.assignedEmployeeId === emp.id;
+                  return (
+                    <Pressable
+                      key={emp.id}
+                      style={({ pressed }) => [
+                        styles.empRow,
+                        index > 0 && styles.rowBorder,
+                        isSelected && styles.empRowSelected,
+                        pressed && styles.rowPressed,
+                      ]}
+                      onPress={() => handleAssign(emp.id)}>
+                      <View>
+                        <Text style={styles.empName}>{emp.name}</Text>
+                        <Text style={styles.empPhone}>{emp.phone}</Text>
+                      </View>
+                      <StatusBadge status={emp.role} />
+                    </Pressable>
+                  );
+                })}
+              </View>
             </ScrollView>
 
             <Button
@@ -195,72 +209,169 @@ export default function TaskDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
-  title: { fontSize: 22, fontWeight: '800', color: '#0f172a', flex: 1, marginRight: 8 },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+  title: {
+    ...Typography.title,
+    color: Colors.light.text,
+    flex: 1,
+    marginRight: Spacing.md,
+  },
+  group: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    padding: 14,
-    marginBottom: 12,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
+    marginBottom: Spacing.md,
   },
-  cardLabel: { fontSize: 12, color: '#64748b', fontWeight: '700', textTransform: 'uppercase' },
-  cardValue: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginTop: 4 },
-  phoneText: { color: '#64748b', fontSize: 13, marginTop: 2 },
-  assignBtnRow: { marginTop: 10 },
-  desc: { color: '#1e293b', fontSize: 14, lineHeight: 22, marginTop: 4 },
-  jobCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+  groupRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: Spacing.md,
+  },
+  rowMain: {
+    flex: 1,
+    marginRight: Spacing.md,
+  },
+  rowLabel: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  rowValue: {
+    ...Typography.headline,
+    fontSize: 16,
+    color: Colors.light.text,
+    marginTop: 2,
+  },
+  phoneText: {
+    ...Typography.caption,
+    color: Colors.light.textMuted,
+    marginTop: 2,
+  },
+  box: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    padding: 14,
-    marginBottom: 12,
+    borderColor: Colors.light.border,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
   },
-  jobHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  linkText: { color: '#0284c7', fontSize: 13, fontWeight: '600' },
-  jobNum: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginTop: 4 },
-  motorMeta: { color: '#64748b', fontSize: 13, marginTop: 2 },
-  timelineBox: { paddingVertical: 8, gap: 4 },
-  timeMeta: { color: '#94a3b8', fontSize: 12 },
-  actionSection: { marginTop: 16, gap: 10, marginBottom: 20 },
+  boxPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  boxLabel: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginBottom: 4,
+  },
+  desc: {
+    ...Typography.body,
+    fontSize: 14,
+    color: Colors.light.text,
+    lineHeight: 20,
+  },
+  boxHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  linkText: {
+    ...Typography.caption,
+    color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  jobNum: {
+    ...Typography.headline,
+    fontSize: 15,
+    color: Colors.light.text,
+    marginTop: 2,
+  },
+  motorMeta: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
+  timelineBox: {
+    paddingVertical: Spacing.sm,
+    gap: 4,
+    marginBottom: Spacing.lg,
+  },
+  timeMeta: {
+    ...Typography.caption,
+    color: Colors.light.textMuted,
+  },
+  actionSection: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.xxl,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    padding: 20,
+    padding: Spacing.lg,
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 20,
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderCurve: 'continuous',
+    padding: Spacing.xl,
     maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
-  modalSub: { color: '#64748b', fontSize: 13, marginTop: 4, marginBottom: 12 },
-  empList: { marginBottom: 16 },
+  modalTitle: {
+    ...Typography.title,
+    color: Colors.light.text,
+  },
+  modalSub: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+    marginBottom: Spacing.md,
+  },
+  empList: {
+    marginBottom: Spacing.lg,
+  },
   empRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    marginBottom: 8,
-    backgroundColor: '#fff',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
   },
   empRowSelected: {
-    borderColor: '#0284c7',
-    backgroundColor: '#f0f9ff',
+    backgroundColor: Colors.light.secondary,
   },
-  empName: { fontWeight: '700', fontSize: 15, color: '#0f172a' },
-  empPhone: { color: '#64748b', fontSize: 12, marginTop: 2 },
+  rowPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  empName: {
+    ...Typography.headline,
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  empPhone: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
 });

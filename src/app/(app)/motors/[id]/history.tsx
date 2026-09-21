@@ -5,6 +5,7 @@ import { parseApiError } from '@/api/errors';
 import { TimelineItem } from '@/components/domain/TimelineItem';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Spacing, Typography } from '@/constants/theme';
 import { useMotorHistory } from '@/hooks/useMotors';
 
 export default function MotorHistoryScreen() {
@@ -13,9 +14,10 @@ export default function MotorHistoryScreen() {
 
   return (
     <ScreenWrapper onRefresh={() => refetch()} refreshing={isRefetching}>
-      <Text style={styles.title}>Motor timeline</Text>
       {isLoading ? (
-        <ActivityIndicator color="#0284c7" style={{ marginTop: 24 }} />
+        <View style={styles.loadingBox}>
+          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+        </View>
       ) : error ? (
         <ErrorBanner message={parseApiError(error).message} onRetry={() => refetch()} />
       ) : (data?.history ?? []).length === 0 ? (
@@ -34,8 +36,19 @@ export default function MotorHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 20, fontWeight: '800', marginBottom: 16, color: '#0f172a' },
-  emptyBox: { paddingVertical: 40, alignItems: 'center' },
-  empty: { color: '#64748b', fontSize: 14 },
-  timeline: { gap: 12 },
+  loadingBox: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  emptyBox: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  empty: {
+    ...Typography.body,
+    color: Colors.light.textSecondary,
+  },
+  timeline: {
+    paddingTop: Spacing.md,
+  },
 });

@@ -1,19 +1,24 @@
-import { RefreshControl, ScrollView, StyleSheet, Text, View, type ScrollViewProps } from 'react-native';
+import {
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type ScrollViewProps,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { StickyBottomCTA } from '@/components/layout/StickyBottomCTA';
+import { Colors, Spacing, Typography } from '@/constants/theme';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
 type Props = ScrollViewProps & {
   children: React.ReactNode;
-  showContactCta?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
 };
 
 export function ScreenWrapper({
   children,
-  showContactCta = true,
   refreshing,
   onRefresh,
   contentContainerStyle,
@@ -25,27 +30,49 @@ export function ScreenWrapper({
     <SafeAreaView style={styles.safe} edges={['top']}>
       {!isConnected ? (
         <View style={styles.offline}>
-          <Text style={styles.offlineText}>Offline — call/WhatsApp still work below</Text>
+          <Text style={styles.offlineText}>Offline mode — local changes will sync when connected</Text>
         </View>
       ) : null}
       <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={[styles.content, contentContainerStyle]}
         refreshControl={
           onRefresh ? (
-            <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor="#0284c7" />
+            <RefreshControl
+              refreshing={!!refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.light.textSecondary}
+            />
           ) : undefined
         }
+        keyboardShouldPersistTaps="handled"
         {...rest}>
         {children}
       </ScrollView>
-      {showContactCta ? <StickyBottomCTA /> : null}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#f8fafc' },
-  content: { padding: 16, paddingBottom: 100 },
-  offline: { backgroundColor: '#fef3c7', paddingVertical: 6, alignItems: 'center' },
-  offlineText: { color: '#92400e', fontSize: 13, fontWeight: '600' },
+  safe: {
+    flex: 1,
+    backgroundColor: Colors.light.backgroundSubtle,
+  },
+  content: {
+    padding: Spacing.lg,
+    paddingBottom: Spacing.xxxl * 2,
+  },
+  offline: {
+    backgroundColor: Colors.light.warningSubtle,
+    borderBottomWidth: 1,
+    borderBottomColor: '#fde68a',
+    paddingVertical: 6,
+    paddingHorizontal: Spacing.md,
+    alignItems: 'center',
+  },
+  offlineText: {
+    ...Typography.caption,
+    color: '#92400e',
+    fontWeight: '600',
+  },
 });

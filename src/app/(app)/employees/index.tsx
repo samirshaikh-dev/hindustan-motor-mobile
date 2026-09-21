@@ -14,6 +14,7 @@ import { Button } from '@/components/common/Button';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useEmployeeStatusDashboard } from '@/hooks/useEmployees';
 
 export default function EmployeesScreen() {
@@ -28,18 +29,27 @@ export default function EmployeesScreen() {
 
   return (
     <ScreenWrapper refreshing={isRefetching} onRefresh={() => refetch()}>
-      <TextInput
-        style={styles.search}
-        placeholder="Search staff by name or phone..."
-        placeholderTextColor="#94a3b8"
-        value={search}
-        onChangeText={setSearch}
-      />
+      <View style={styles.searchWrap}>
+        <TextInput
+          style={styles.search}
+          placeholder="Search staff by name or phone..."
+          placeholderTextColor={Colors.light.textMuted}
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
 
-      <Button title="Register new team member" onPress={() => router.push('/(app)/employees/create')} />
+      <View style={styles.ctaRow}>
+        <Button
+          title="Add Staff Member"
+          onPress={() => router.push('/(app)/employees/create')}
+        />
+      </View>
 
       {isLoading ? (
-        <ActivityIndicator color="#0284c7" style={{ marginTop: 24 }} />
+        <View style={styles.loadingBox}>
+          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+        </View>
       ) : error ? (
         <ErrorBanner message={parseApiError(error).message} onRetry={() => refetch()} />
       ) : filteredEmployees.length === 0 ? (
@@ -47,33 +57,27 @@ export default function EmployeesScreen() {
           <Text style={styles.empty}>No team members found.</Text>
         </View>
       ) : (
-        <View style={styles.list}>
-          {filteredEmployees.map((emp) => (
+        <View style={styles.group}>
+          {filteredEmployees.map((emp, index) => (
             <Pressable
               key={emp.id}
-              style={styles.card}
+              style={({ pressed }) => [
+                styles.row,
+                index > 0 && styles.rowBorder,
+                pressed && styles.rowPressed,
+              ]}
               onPress={() => router.push(`/(app)/employees/${emp.id}`)}>
-              <View style={styles.row}>
-                <View style={styles.nameCol}>
+              <View style={styles.mainInfo}>
+                <View style={styles.nameLine}>
                   <Text style={styles.name}>{emp.name}</Text>
-                  <Text style={styles.phone}>{emp.phone}</Text>
-                </View>
-                <View style={styles.badgeCol}>
-                  <StatusBadge status={emp.role} />
                   {!emp.isActive ? <StatusBadge status="CANCELLED" /> : null}
                 </View>
-              </View>
-
-              <View style={styles.metaRow}>
-                <Text style={styles.meta}>
-                  {emp.activeTaskCount ?? 0} active task(s)
+                <Text style={styles.phone}>{emp.phone}</Text>
+                <Text style={styles.tasks}>
+                  {emp.activeTaskCount ?? 0} active task{emp.activeTaskCount === 1 ? '' : 's'}
                 </Text>
-                {emp.isActive ? (
-                  <Text style={styles.activeTag}>● Active</Text>
-                ) : (
-                  <Text style={styles.inactiveTag}>○ Inactive</Text>
-                )}
               </View>
+              <StatusBadge status={emp.role} />
             </Pressable>
           ))}
         </View>
@@ -83,40 +87,79 @@ export default function EmployeesScreen() {
 }
 
 const styles = StyleSheet.create({
+  searchWrap: {
+    marginBottom: Spacing.sm,
+  },
   search: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#fff',
+    borderColor: Colors.light.border,
+    borderRadius: Radius.md,
+    borderCurve: 'continuous',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    backgroundColor: Colors.light.surface,
     fontSize: 15,
+    color: Colors.light.text,
   },
-  list: { marginTop: 16, gap: 10 },
-  card: {
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 8,
+  ctaRow: {
+    marginBottom: Spacing.md,
   },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  nameCol: { flex: 1, marginRight: 8 },
-  badgeCol: { alignItems: 'flex-end', gap: 4 },
-  name: { fontWeight: '700', fontSize: 16, color: '#0f172a' },
-  phone: { color: '#64748b', fontSize: 13, marginTop: 2 },
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  loadingBox: {
+    paddingVertical: Spacing.xxxl,
     alignItems: 'center',
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
   },
-  meta: { color: '#64748b', fontSize: 13, fontWeight: '500' },
-  activeTag: { color: '#16a34a', fontSize: 12, fontWeight: '600' },
-  inactiveTag: { color: '#94a3b8', fontSize: 12, fontWeight: '600' },
-  emptyBox: { paddingVertical: 40, alignItems: 'center' },
-  empty: { color: '#64748b', fontSize: 14 },
+  group: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+  },
+  rowPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  mainInfo: {
+    flex: 1,
+    marginRight: Spacing.md,
+    gap: 2,
+  },
+  nameLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  name: {
+    ...Typography.headline,
+    fontSize: 15,
+    color: Colors.light.text,
+  },
+  phone: {
+    ...Typography.subhead,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+  },
+  tasks: {
+    ...Typography.caption,
+    color: Colors.light.textMuted,
+    marginTop: 2,
+  },
+  emptyBox: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  empty: {
+    ...Typography.body,
+    color: Colors.light.textSecondary,
+  },
 });

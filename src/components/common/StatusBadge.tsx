@@ -1,27 +1,39 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-const COLORS: Record<string, string> = {
-  RECEIVED: '#6366f1',
-  IN_PROGRESS: '#0284c7',
-  TESTING: '#d97706',
-  READY_FOR_DELIVERY: '#16a34a',
-  DELIVERED: '#15803d',
-  CANCELLED: '#64748b',
-  PENDING: '#94a3b8',
-  ASSIGNED: '#6366f1',
-  COMPLETED: '#16a34a',
-};
+import { Radius, Spacing, StatusColors } from '@/constants/theme';
 
 export function StatusBadge({ status }: { status: string }) {
-  const bg = COLORS[status] ?? '#64748b';
+  const token = StatusColors[status] ?? {
+    bg: '#f8fafc',
+    text: '#64748b',
+    border: '#e2e8f0',
+  };
+
   return (
-    <View style={[styles.badge, { backgroundColor: bg }]}>
-      <Text style={styles.text}>{status.replace(/_/g, ' ')}</Text>
+    <View
+      style={[
+        styles.badge,
+        { backgroundColor: token.bg, borderColor: token.border },
+      ]}>
+      <Text style={[styles.text, { color: token.text }]}>
+        {status.replace(/_/g, ' ')}
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, alignSelf: 'flex-start' },
-  text: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  badge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  text: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    textTransform: 'uppercase',
+  },
 });

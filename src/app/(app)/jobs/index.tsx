@@ -15,6 +15,7 @@ import { Button } from '@/components/common/Button';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useJobs } from '@/hooks/useJobs';
 import type { JobStatus } from '@/types/domain';
 
@@ -50,32 +51,47 @@ export default function JobsListScreen() {
 
   return (
     <ScreenWrapper refreshing={isRefetching} onRefresh={() => refetch()}>
-      <TextInput
-        style={styles.search}
-        placeholder="Filter by job number, customer, motor..."
-        placeholderTextColor="#94a3b8"
-        value={search}
-        onChangeText={setSearch}
-      />
+      <View style={styles.searchWrap}>
+        <TextInput
+          style={styles.search}
+          placeholder="Filter by job number, customer, motor..."
+          placeholderTextColor={Colors.light.textMuted}
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
-        {STATUSES.map((s) => (
-          <Pressable
-            key={s}
-            style={[styles.chip, status === s && styles.chipActive]}
-            onPress={() => {
-              setStatus(s);
-              setPage(1);
-            }}>
-            <Text style={[styles.chipText, status === s && styles.chipTextActive]}>
-              {s.replace(/_/g, ' ')}
-            </Text>
-          </Pressable>
-        ))}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsContainer}
+        style={styles.chips}>
+        {STATUSES.map((s) => {
+          const active = status === s;
+          return (
+            <Pressable
+              key={s}
+              style={({ pressed }) => [
+                styles.chip,
+                active && styles.chipActive,
+                pressed && styles.chipPressed,
+              ]}
+              onPress={() => {
+                setStatus(s);
+                setPage(1);
+              }}>
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                {s.replace(/_/g, ' ')}
+              </Text>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
       {isLoading ? (
-        <ActivityIndicator color="#0284c7" style={{ marginTop: 24 }} />
+        <View style={styles.loadingBox}>
+          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+        </View>
       ) : error ? (
         <ErrorBanner message={parseApiError(error).message} onRetry={() => refetch()} />
       ) : filteredJobs.length === 0 ? (
@@ -84,13 +100,17 @@ export default function JobsListScreen() {
         </View>
       ) : (
         <>
-          <View style={styles.list}>
-            {filteredJobs.map((job) => (
+          <View style={styles.group}>
+            {filteredJobs.map((job, index) => (
               <Pressable
                 key={job.id}
-                style={styles.card}
+                style={({ pressed }) => [
+                  styles.row,
+                  index > 0 && styles.rowBorder,
+                  pressed && styles.rowPressed,
+                ]}
                 onPress={() => router.push(`/(app)/jobs/${job.id}`)}>
-                <View style={styles.cardHeader}>
+                <View style={styles.topLine}>
                   <Text style={styles.num}>{job.jobNumber}</Text>
                   <StatusBadge status={job.status} />
                 </View>
@@ -102,7 +122,7 @@ export default function JobsListScreen() {
                   ) : null}
                 </View>
                 {job.notes ? (
-                  <Text style={styles.notes} numberOfLines={2}>
+                  <Text style={styles.notes} numberOfLines={1}>
                     {job.notes}
                   </Text>
                 ) : null}
@@ -136,58 +156,121 @@ export default function JobsListScreen() {
 }
 
 const styles = StyleSheet.create({
+  searchWrap: {
+    marginBottom: Spacing.sm,
+  },
   search: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-    backgroundColor: '#fff',
+    borderColor: Colors.light.border,
+    borderRadius: Radius.md,
+    borderCurve: 'continuous',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    backgroundColor: Colors.light.surface,
     fontSize: 15,
+    color: Colors.light.text,
   },
-  chips: { marginBottom: 12, maxHeight: 40 },
+  chips: {
+    marginBottom: Spacing.md,
+    maxHeight: 38,
+  },
+  chipsContainer: {
+    gap: Spacing.xs,
+  },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 16,
-    backgroundColor: '#f1f5f9',
-    marginRight: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.light.surface,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: Colors.light.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipActive: {
-    backgroundColor: '#0284c7',
-    borderColor: '#0284c7',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
-  chipText: { fontSize: 12, fontWeight: '600', color: '#475569' },
-  chipTextActive: { color: '#fff' },
-  list: { gap: 10 },
-  card: {
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 10,
+  chipPressed: {
+    opacity: 0.8,
+  },
+  chipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
+  },
+  chipTextActive: {
+    color: Colors.light.primaryForeground,
+    fontWeight: '600',
+  },
+  loadingBox: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  group: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 4,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
   },
-  cardHeader: {
+  row: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    gap: 3,
+  },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+  },
+  rowPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  topLine: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  num: { fontWeight: '800', fontSize: 16, color: '#0f172a' },
-  customer: { fontSize: 15, fontWeight: '600', color: '#1e293b' },
-  metaRow: { flexDirection: 'row', gap: 6 },
-  meta: { color: '#64748b', fontSize: 13 },
-  notes: { color: '#475569', fontSize: 13, marginTop: 4 },
-  emptyContainer: { paddingVertical: 40, alignItems: 'center' },
-  empty: { color: '#64748b', fontSize: 14 },
+  num: {
+    ...Typography.headline,
+    color: Colors.light.text,
+  },
+  customer: {
+    ...Typography.body,
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.light.text,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    marginTop: 2,
+  },
+  meta: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+  },
+  notes: {
+    ...Typography.caption,
+    color: Colors.light.textMuted,
+    marginTop: 2,
+  },
+  emptyContainer: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  empty: {
+    ...Typography.body,
+    color: Colors.light.textSecondary,
+  },
   paginationRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20,
-    paddingVertical: 10,
+    marginTop: Spacing.lg,
   },
-  pageLabel: { color: '#64748b', fontSize: 14, fontWeight: '600' },
+  pageLabel: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+  },
 });

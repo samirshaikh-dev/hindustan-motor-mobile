@@ -15,6 +15,7 @@ import { Button } from '@/components/common/Button';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useMotors } from '@/hooks/useMotors';
 import type { JobStatus } from '@/types/domain';
 
@@ -41,37 +42,57 @@ export default function MotorsListScreen() {
 
   return (
     <ScreenWrapper refreshing={isRefetching} onRefresh={() => refetch()}>
-      <TextInput
-        style={styles.search}
-        placeholder="Search motor number, customer, phone..."
-        placeholderTextColor="#94a3b8"
-        value={search}
-        onChangeText={(t) => {
-          setSearch(t);
-          setPage(1);
-        }}
-      />
+      <View style={styles.searchWrap}>
+        <TextInput
+          style={styles.search}
+          placeholder="Search motor number, customer, phone..."
+          placeholderTextColor={Colors.light.textMuted}
+          value={search}
+          onChangeText={(t) => {
+            setSearch(t);
+            setPage(1);
+          }}
+        />
+      </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
-        {STATUS_FILTERS.map((s) => (
-          <Pressable
-            key={s}
-            style={[styles.chip, status === s && styles.chipActive]}
-            onPress={() => {
-              setStatus(s);
-              setPage(1);
-            }}>
-            <Text style={[styles.chipText, status === s && styles.chipTextActive]}>
-              {s.replace(/_/g, ' ')}
-            </Text>
-          </Pressable>
-        ))}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsContainer}
+        style={styles.chips}>
+        {STATUS_FILTERS.map((s) => {
+          const active = status === s;
+          return (
+            <Pressable
+              key={s}
+              style={({ pressed }) => [
+                styles.chip,
+                active && styles.chipActive,
+                pressed && styles.chipPressed,
+              ]}
+              onPress={() => {
+                setStatus(s);
+                setPage(1);
+              }}>
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                {s.replace(/_/g, ' ')}
+              </Text>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
-      <Button title="Register new motor" onPress={() => router.push('/(app)/motors/register')} />
+      <View style={styles.ctaRow}>
+        <Button
+          title="Register New Motor"
+          onPress={() => router.push('/(app)/motors/register')}
+        />
+      </View>
 
       {isLoading ? (
-        <ActivityIndicator color="#0284c7" style={{ marginTop: 24 }} />
+        <View style={styles.loadingBox}>
+          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+        </View>
       ) : error ? (
         <ErrorBanner message={parseApiError(error).message} onRetry={() => refetch()} />
       ) : (data?.items.length ?? 0) === 0 ? (
@@ -80,30 +101,36 @@ export default function MotorsListScreen() {
         </View>
       ) : (
         <>
-          <View style={styles.list}>
-            {data?.items.map((motor) => {
+          <View style={styles.group}>
+            {data?.items.map((motor, index) => {
               const activeJob = motor.jobs?.[0];
               const powerSpec = motor.power ? `${motor.power} ${motor.powerUnit || 'HP'}` : null;
               return (
                 <Pressable
                   key={motor.id}
-                  style={styles.card}
+                  style={({ pressed }) => [
+                    styles.row,
+                    index > 0 && styles.rowBorder,
+                    pressed && styles.rowPressed,
+                  ]}
                   onPress={() => router.push(`/(app)/motors/${motor.id}`)}>
-                  <View style={styles.cardHeader}>
-                    <Text style={styles.number}>{motor.motorNumber}</Text>
-                    {activeJob ? <StatusBadge status={activeJob.status} /> : null}
+                  <View style={styles.rowMain}>
+                    <View style={styles.topLine}>
+                      <Text style={styles.number}>{motor.motorNumber}</Text>
+                      {activeJob ? <StatusBadge status={activeJob.status} /> : null}
+                    </View>
+                    <Text style={styles.customer}>{motor.customerName}</Text>
+                    <View style={styles.metaRow}>
+                      <Text style={styles.meta}>{motor.customerPhone}</Text>
+                      {powerSpec ? <Text style={styles.meta}>· {powerSpec}</Text> : null}
+                      {motor.brand ? <Text style={styles.meta}>· {motor.brand}</Text> : null}
+                    </View>
+                    {motor.complaint ? (
+                      <Text style={styles.complaint} numberOfLines={1}>
+                        {motor.complaint}
+                      </Text>
+                    ) : null}
                   </View>
-                  <Text style={styles.customer}>{motor.customerName}</Text>
-                  <View style={styles.metaRow}>
-                    <Text style={styles.meta}>{motor.customerPhone}</Text>
-                    {powerSpec ? <Text style={styles.meta}>· {powerSpec}</Text> : null}
-                    {motor.brand ? <Text style={styles.meta}>· {motor.brand}</Text> : null}
-                  </View>
-                  {motor.complaint ? (
-                    <Text style={styles.complaint} numberOfLines={2}>
-                      {motor.complaint}
-                    </Text>
-                  ) : null}
                 </Pressable>
               );
             })}
@@ -135,58 +162,127 @@ export default function MotorsListScreen() {
 }
 
 const styles = StyleSheet.create({
+  searchWrap: {
+    marginBottom: Spacing.sm,
+  },
   search: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-    backgroundColor: '#fff',
+    borderColor: Colors.light.border,
+    borderRadius: Radius.md,
+    borderCurve: 'continuous',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    backgroundColor: Colors.light.surface,
     fontSize: 15,
+    color: Colors.light.text,
   },
-  chips: { marginBottom: 12, maxHeight: 40 },
+  chips: {
+    marginBottom: Spacing.md,
+    maxHeight: 38,
+  },
+  chipsContainer: {
+    gap: Spacing.xs,
+  },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 16,
-    backgroundColor: '#f1f5f9',
-    marginRight: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.light.surface,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: Colors.light.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipActive: {
-    backgroundColor: '#0284c7',
-    borderColor: '#0284c7',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
-  chipText: { fontSize: 12, fontWeight: '600', color: '#475569' },
-  chipTextActive: { color: '#fff' },
-  list: { marginTop: 14, gap: 10 },
-  card: {
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 10,
+  chipPressed: {
+    opacity: 0.8,
+  },
+  chipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
+  },
+  chipTextActive: {
+    color: Colors.light.primaryForeground,
+    fontWeight: '600',
+  },
+  ctaRow: {
+    marginBottom: Spacing.md,
+  },
+  loadingBox: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  group: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 4,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
   },
-  cardHeader: {
+  row: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+  },
+  rowPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  rowMain: {
+    gap: 3,
+  },
+  topLine: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  number: { fontWeight: '800', fontSize: 16, color: '#0f172a' },
-  customer: { fontSize: 15, fontWeight: '600', color: '#1e293b' },
-  metaRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  meta: { color: '#64748b', fontSize: 13 },
-  complaint: { color: '#475569', fontSize: 13, marginTop: 4 },
-  emptyContainer: { paddingVertical: 40, alignItems: 'center' },
-  empty: { color: '#64748b', textAlign: 'center', fontSize: 15 },
+  number: {
+    ...Typography.headline,
+    color: Colors.light.text,
+  },
+  customer: {
+    ...Typography.body,
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.light.text,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+    marginTop: 2,
+  },
+  meta: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+  },
+  complaint: {
+    ...Typography.caption,
+    color: Colors.light.textMuted,
+    marginTop: 2,
+  },
+  emptyContainer: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  empty: {
+    ...Typography.body,
+    color: Colors.light.textSecondary,
+  },
   paginationRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20,
-    paddingVertical: 10,
+    marginTop: Spacing.lg,
   },
-  pageLabel: { color: '#64748b', fontSize: 14, fontWeight: '600' },
+  pageLabel: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+  },
 });

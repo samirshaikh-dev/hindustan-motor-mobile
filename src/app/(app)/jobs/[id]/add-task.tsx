@@ -9,6 +9,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { queryKeys } from '@/config/queryKeys';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { employeeService } from '@/services/employee.service';
 import { jobService } from '@/services/job.service';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -29,14 +30,14 @@ export default function AddTaskScreen() {
 
   const submit = async () => {
     if (!title.trim()) {
-      Alert.alert('Title required');
+      Alert.alert('Required', 'Please enter a task title');
       return;
     }
     setLoading(true);
     try {
       await jobService.createTask(id!, {
         title: title.trim(),
-        description: description || undefined,
+        description: description.trim() || undefined,
         assignedEmployeeId: assigneeId,
       });
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -50,39 +51,102 @@ export default function AddTaskScreen() {
 
   return (
     <ScreenWrapper>
-      <Input label="Task title" value={title} onChangeText={setTitle} />
-      <Input label="Description" multiline value={description} onChangeText={setDescription} />
+      <Input
+        label="Task Title"
+        placeholder="e.g. Coil Winding, Bearing Replacement, Varnishing"
+        value={title}
+        onChangeText={setTitle}
+      />
+      <Input
+        label="Instructions / Description (optional)"
+        multiline
+        numberOfLines={3}
+        placeholder="Specific instructions for the technician"
+        value={description}
+        onChangeText={setDescription}
+      />
 
       {isOwner ? (
         <>
-          <Text style={styles.label}>Assign to (owner only)</Text>
-          <View style={styles.list}>
-            {(employeesQuery.data?.employees ?? []).map((emp) => (
-              <Pressable
-                key={emp.id}
-                style={[styles.emp, assigneeId === emp.id && styles.empActive]}
-                onPress={() => setAssigneeId(assigneeId === emp.id ? undefined : emp.id)}>
-                <Text>{emp.name}</Text>
-              </Pressable>
-            ))}
+          <Text style={styles.label}>Assign to Technician (Owner Only)</Text>
+          <View style={styles.group}>
+            {(employeesQuery.data?.employees ?? []).map((emp, index) => {
+              const selected = assigneeId === emp.id;
+              return (
+                <Pressable
+                  key={emp.id}
+                  style={({ pressed }) => [
+                    styles.empRow,
+                    index > 0 && styles.rowBorder,
+                    selected && styles.empRowSelected,
+                    pressed && styles.rowPressed,
+                  ]}
+                  onPress={() => setAssigneeId(selected ? undefined : emp.id)}>
+                  <Text style={[styles.empName, selected && styles.empNameSelected]}>
+                    {emp.name}
+                  </Text>
+                  <Text style={styles.empPhone}>{emp.phone}</Text>
+                </Pressable>
+              );
+            })}
           </View>
         </>
       ) : null}
 
-      <Button title="Create task" loading={loading} onPress={submit} />
+      <View style={styles.submitRow}>
+        <Button title="Create Task" loading={loading} onPress={submit} />
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  label: { fontWeight: '600', marginBottom: 8 },
-  list: { gap: 6, marginBottom: 16 },
-  emp: {
-    padding: 12,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+  label: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+    fontWeight: '500',
+    marginBottom: Spacing.xs,
+    marginTop: Spacing.sm,
   },
-  empActive: { borderColor: '#0284c7', backgroundColor: '#e0f2fe' },
+  group: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
+    marginBottom: Spacing.md,
+  },
+  empRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+  },
+  empRowSelected: {
+    backgroundColor: Colors.light.secondary,
+  },
+  rowPressed: {
+    opacity: 0.8,
+  },
+  empName: {
+    ...Typography.headline,
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  empNameSelected: {
+    fontWeight: '700',
+  },
+  empPhone: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+  },
+  submitRow: {
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xxl,
+  },
 });

@@ -17,6 +17,7 @@ import { Input } from '@/components/common/Input';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useJobDetail, useUpdateJobStatus } from '@/hooks/useJobs';
 import type { JobStatus } from '@/types/domain';
 import { formatDateTime } from '@/utils/formatters';
@@ -33,7 +34,7 @@ export default function JobDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#0284c7" size="large" />
+        <ActivityIndicator color={Colors.light.textSecondary} size="small" />
       </View>
     );
   }
@@ -62,39 +63,46 @@ export default function JobDetailScreen() {
   };
 
   const nextStatuses = getNextJobStatuses(data.status);
+  const primaryNextStatus = nextStatuses.find((s) => s !== 'CANCELLED');
+  const cancelStatus = nextStatuses.find((s) => s === 'CANCELLED');
 
   return (
     <ScreenWrapper refreshing={isRefetching} onRefresh={() => refetch()}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerMain}>
           <Text style={styles.num}>{data.jobNumber}</Text>
           <Text style={styles.created}>Created {formatDateTime(data.createdAt)}</Text>
         </View>
         <StatusBadge status={data.status} />
       </View>
 
+      {/* Linked Motor */}
       {data.motor ? (
         <Pressable
-          style={styles.motorCard}
+          style={({ pressed }) => [styles.motorCard, pressed && styles.cardPressed]}
           onPress={() => router.push(`/(app)/motors/${data.motorId}`)}>
-          <View style={styles.motorHeader}>
-            <Text style={styles.motorLabel}>Linked Motor</Text>
-            <Text style={styles.motorLink}>View Motor →</Text>
+          <View style={styles.motorTop}>
+            <Text style={styles.sectionLabel}>Linked Motor</Text>
+            <Text style={styles.linkText}>View Motor →</Text>
           </View>
           <Text style={styles.motorNumber}>{data.motor.motorNumber}</Text>
           <Text style={styles.customer}>{data.motor.customerName}</Text>
         </Pressable>
       ) : null}
 
+      {/* Job Notes */}
       {data.notes ? (
-        <View style={styles.notesCard}>
-          <Text style={styles.notesLabel}>Job Notes</Text>
+        <View style={styles.notesBox}>
+          <Text style={styles.sectionLabel}>Instructions & Notes</Text>
           <Text style={styles.notesText}>{data.notes}</Text>
         </View>
       ) : null}
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.section}>Tasks Workbench ({data.tasks?.length ?? 0})</Text>
+      {/* Tasks Section */}
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionTitle}>
+          Tasks ({data.tasks?.length ?? 0})
+        </Text>
         <Button
           title="Add Task"
           variant="secondary"
@@ -105,21 +113,23 @@ export default function JobDetailScreen() {
       {(data.tasks?.length ?? 0) === 0 ? (
         <Text style={styles.emptyText}>No tasks created under this job order yet.</Text>
       ) : (
-        <View style={styles.taskList}>
-          {data.tasks?.map((task) => (
+        <View style={styles.group}>
+          {data.tasks?.map((task, idx) => (
             <Pressable
               key={task.id}
-              style={styles.taskRow}
+              style={({ pressed }) => [
+                styles.taskRow,
+                idx > 0 && styles.rowBorder,
+                pressed && styles.rowPressed,
+              ]}
               onPress={() => router.push(`/(app)/tasks/${task.id}`)}>
               <View style={styles.taskInfo}>
                 <Text style={styles.taskTitle}>{task.title}</Text>
-                {task.assignedEmployee ? (
-                  <Text style={styles.taskAssignee}>
-                    Assigned: {task.assignedEmployee.name}
-                  </Text>
-                ) : (
-                  <Text style={styles.taskUnassigned}>Unassigned</Text>
-                )}
+                <Text style={styles.taskAssignee}>
+                  {task.assignedEmployee
+                    ? `Assigned: ${task.assignedEmployee.name}`
+                    : 'Unassigned'}
+                </Text>
               </View>
               <StatusBadge status={task.status} />
             </Pressable>
@@ -127,46 +137,55 @@ export default function JobDetailScreen() {
         </View>
       )}
 
-      {nextStatuses.length > 0 ? (
+      {/* Advance Status: Exactly one primary CTA */}
+      {primaryNextStatus ? (
         <View style={styles.transitionSection}>
-          <Text style={styles.section}>Advance Job Status</Text>
-          <View style={styles.transitionButtons}>
-            {nextStatuses.map((s) => (
-              <Button
-                key={s}
-                title={s.replace(/_/g, ' ')}
-                variant={s === 'CANCELLED' ? 'danger' : 'secondary'}
-                onPress={() => {
-                  setPendingStatus(s);
-                  setTransitionNotes('');
-                }}
-              />
-            ))}
-          </View>
+          <Button
+            title={`Advance Status to ${primaryNextStatus.replace(/_/g, ' ')}`}
+            onPress={() => {
+              setPendingStatus(primaryNextStatus);
+              setTransitionNotes('');
+            }}
+          />
         </View>
       ) : null}
 
+      {/* Secondary / Danger Actions */}
       <View style={styles.footerActions}>
+        {cancelStatus ? (
+          <Button
+            title="Cancel Job Order"
+            variant="destructive"
+            onPress={() => {
+              setPendingStatus('CANCELLED');
+              setTransitionNotes('');
+            }}
+          />
+        ) : null}
         <Button
           title="View Job Audit History"
-          variant="secondary"
+          variant="ghost"
           onPress={() => router.push(`/(app)/jobs/${id}/history`)}
         />
       </View>
 
-      {/* Transition Modal with Notes */}
-      <Modal visible={!!pendingStatus} transparent animationType="slide">
+      {/* Status Transition Modal */}
+      <Modal visible={!!pendingStatus} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Update Job Status</Text>
             <Text style={styles.modalDesc}>
-              Move status to <Text style={styles.bold}>{pendingStatus?.replace(/_/g, ' ')}</Text>
+              Advance to{' '}
+              <Text style={styles.bold}>
+                {pendingStatus?.replace(/_/g, ' ')}
+              </Text>
             </Text>
 
             <Input
               label="Transition Notes (optional)"
-              placeholder="e.g. Coil winding complete; ready for varnish baking"
+              placeholder="e.g. Baking complete, ready for testing"
               multiline
+              numberOfLines={3}
               value={transitionNotes}
               onChangeText={setTransitionNotes}
             />
@@ -191,82 +210,176 @@ export default function JobDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
+    alignItems: 'flex-start',
+    marginBottom: Spacing.lg,
   },
-  num: { fontSize: 22, fontWeight: '800', color: '#0f172a' },
-  created: { color: '#64748b', fontSize: 13, marginTop: 2 },
+  headerMain: {
+    flex: 1,
+    marginRight: Spacing.md,
+  },
+  num: {
+    ...Typography.title,
+    color: Colors.light.text,
+  },
+  created: {
+    ...Typography.caption,
+    color: Colors.light.textMuted,
+    marginTop: 2,
+  },
   motorCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    padding: 14,
-    marginBottom: 12,
+    borderColor: Colors.light.border,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
   },
-  motorHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  motorLabel: { fontSize: 12, color: '#64748b', fontWeight: '700', textTransform: 'uppercase' },
-  motorLink: { fontSize: 13, color: '#0284c7', fontWeight: '600' },
-  motorNumber: { fontSize: 16, fontWeight: '700', color: '#0f172a', marginTop: 4 },
-  customer: { fontSize: 14, color: '#475569', marginTop: 2 },
-  notesCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    padding: 12,
-    marginBottom: 16,
+  cardPressed: {
+    backgroundColor: Colors.light.secondary,
   },
-  notesLabel: { fontSize: 12, color: '#64748b', fontWeight: '700', marginBottom: 4 },
-  notesText: { fontSize: 14, color: '#1e293b', lineHeight: 20 },
-  sectionHeader: {
+  motorTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  section: { fontWeight: '700', fontSize: 17, color: '#0f172a' },
-  emptyText: { color: '#94a3b8', fontSize: 14, marginVertical: 6 },
-  taskList: { gap: 8, marginBottom: 16 },
+  sectionLabel: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  linkText: {
+    ...Typography.caption,
+    color: Colors.light.primary,
+    fontWeight: '600',
+  },
+  motorNumber: {
+    ...Typography.headline,
+    color: Colors.light.text,
+  },
+  customer: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
+  notesBox: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    gap: 4,
+  },
+  notesText: {
+    ...Typography.body,
+    fontSize: 14,
+    color: Colors.light.text,
+    lineHeight: 20,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  sectionTitle: {
+    ...Typography.headline,
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  emptyText: {
+    ...Typography.subhead,
+    color: Colors.light.textMuted,
+    marginVertical: Spacing.xs,
+  },
+  group: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
+  },
   taskRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
   },
-  taskInfo: { flex: 1, marginRight: 8 },
-  taskTitle: { fontWeight: '600', fontSize: 15, color: '#0f172a' },
-  taskAssignee: { color: '#64748b', fontSize: 13, marginTop: 2 },
-  taskUnassigned: { color: '#f59e0b', fontSize: 12, fontWeight: '600', marginTop: 2 },
-  transitionSection: { marginTop: 16, marginBottom: 16 },
-  transitionButtons: { gap: 8, marginTop: 8 },
-  footerActions: { marginTop: 10, marginBottom: 20 },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+  },
+  rowPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  taskInfo: {
+    flex: 1,
+    marginRight: Spacing.md,
+  },
+  taskTitle: {
+    ...Typography.headline,
+    fontSize: 15,
+    color: Colors.light.text,
+  },
+  taskAssignee: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
+  transitionSection: {
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.md,
+  },
+  footerActions: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.xxl,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    padding: 20,
+    padding: Spacing.lg,
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderCurve: 'continuous',
+    padding: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
-  modalDesc: { color: '#64748b', fontSize: 14, marginTop: 4, marginBottom: 14 },
-  bold: { fontWeight: '700', color: '#0284c7' },
-  modalButtons: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  modalTitle: {
+    ...Typography.title,
+    color: Colors.light.text,
+  },
+  modalDesc: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.md,
+  },
+  bold: {
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
 });

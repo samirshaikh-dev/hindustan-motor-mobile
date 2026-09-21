@@ -6,6 +6,7 @@ import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Spacing, Typography } from '@/constants/theme';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -16,6 +17,10 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Required', 'Please enter your email and password');
+      return;
+    }
     setLoading(true);
     try {
       const result = await authService.login({ email, password });
@@ -30,27 +35,63 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScreenWrapper showContactCta={false}>
-      <Text style={styles.title}>Workshop Owner</Text>
-      <Text style={styles.sub}>Sign in to assign tasks and manage the team.</Text>
-      <Input
-        label="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <Input label="Password" secureTextEntry value={password} onChangeText={setPassword} />
-      <Button title="Sign In" loading={loading} onPress={onSubmit} />
-      <View style={styles.footer}>
-        <Button title="Back to profile selection" variant="secondary" onPress={() => router.back()} />
+    <ScreenWrapper contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Workshop Owner</Text>
+        <Text style={styles.sub}>Sign in to assign tasks and manage shop-floor staff.</Text>
+      </View>
+
+      <View style={styles.form}>
+        <Input
+          label="Email"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="owner@hindustan.com"
+        />
+        <Input
+          label="Password"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          placeholder="Enter password"
+        />
+
+        <View style={styles.actions}>
+          <Button title="Sign In" loading={loading} onPress={onSubmit} />
+          <Button
+            title="Back to profile selection"
+            variant="ghost"
+            onPress={() => router.back()}
+          />
+        </View>
       </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 24, fontWeight: '800', color: '#0f172a', marginBottom: 8 },
-  sub: { color: '#64748b', marginBottom: 20 },
-  footer: { marginTop: 16 },
+  container: {
+    paddingTop: Spacing.xxxl,
+  },
+  header: {
+    marginBottom: Spacing.xl,
+  },
+  title: {
+    ...Typography.title,
+    color: Colors.light.text,
+  },
+  sub: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+    marginTop: Spacing.xs,
+  },
+  form: {
+    gap: Spacing.xs,
+  },
+  actions: {
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
 });

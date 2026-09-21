@@ -1,5 +1,7 @@
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
+
 type Props = TextInputProps & {
   label: string;
   error?: string;
@@ -10,8 +12,8 @@ export function Input({ label, error, style, ...rest }: Props) {
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        style={[styles.input, error && styles.inputError, style]}
-        placeholderTextColor="#94a3b8"
+        style={[styles.input, error ? styles.inputError : null, style]}
+        placeholderTextColor={Colors.light.textMuted}
         {...rest}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -20,17 +22,32 @@ export function Input({ label, error, style, ...rest }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginBottom: 12 },
-  label: { fontWeight: '600', marginBottom: 6, color: '#0f172a' },
+  wrap: {
+    marginBottom: Spacing.md,
+  },
+  label: {
+    ...Typography.subhead,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
+    marginBottom: Spacing.xs,
+  },
   input: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    borderColor: Colors.light.border,
+    borderRadius: Radius.md,
+    borderCurve: 'continuous',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: Colors.light.text,
+    backgroundColor: Colors.light.surface,
   },
-  inputError: { borderColor: '#dc2626' },
-  error: { color: '#dc2626', marginTop: 4, fontSize: 13 },
+  inputError: {
+    borderColor: Colors.light.destructive,
+  },
+  error: {
+    ...Typography.caption,
+    color: Colors.light.destructive,
+    marginTop: Spacing.xs,
+  },
 });

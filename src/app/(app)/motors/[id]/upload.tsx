@@ -2,12 +2,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { queryKeys } from '@/config/queryKeys';
+import { Colors, Spacing, Typography } from '@/constants/theme';
 import { mediaService } from '@/services/media.service';
 
 export default function UploadMotorPhotoScreen() {
@@ -35,16 +36,49 @@ export default function UploadMotorPhotoScreen() {
   };
 
   return (
-    <ScreenWrapper>
-      <Text style={styles.title}>Motor photo</Text>
-      <Text style={styles.sub}>Capture damage before repair work begins.</Text>
-      <Button title="Take photo" loading={loading} onPress={() => upload(true)} />
-      <Button title="Choose from gallery" variant="secondary" loading={loading} onPress={() => upload(false)} />
+    <ScreenWrapper contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Inspection Photo</Text>
+        <Text style={styles.sub}>
+          Document motor condition or burned coils before commencing rewinding work.
+        </Text>
+      </View>
+
+      <View style={styles.actions}>
+        <Button
+          title="Take Photo with Camera"
+          loading={loading}
+          onPress={() => upload(true)}
+        />
+        <Button
+          title="Choose from Gallery"
+          variant="secondary"
+          disabled={loading}
+          onPress={() => upload(false)}
+        />
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 20, fontWeight: '800' },
-  sub: { color: '#64748b', marginVertical: 12 },
+  container: {
+    paddingTop: Spacing.xl,
+  },
+  header: {
+    marginBottom: Spacing.xl,
+  },
+  title: {
+    ...Typography.title,
+    color: Colors.light.text,
+  },
+  sub: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+    marginTop: Spacing.xs,
+    lineHeight: 20,
+  },
+  actions: {
+    gap: Spacing.md,
+  },
 });

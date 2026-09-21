@@ -13,6 +13,7 @@ import { Button } from '@/components/common/Button';
 import { TimelineItem } from '@/components/domain/TimelineItem';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useGlobalHistory } from '@/hooks/useHistory';
 import type { HistoryAction } from '@/types/domain';
 
@@ -37,27 +38,37 @@ export default function HistoryScreen() {
 
   return (
     <ScreenWrapper refreshing={isRefetching} onRefresh={() => refetch()}>
-      <Text style={styles.title}>Workshop Audit Log</Text>
-      <Text style={styles.sub}>Chronological record of floor activity and job state changes.</Text>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
-        {ACTION_FILTERS.map((f) => (
-          <Pressable
-            key={f.label}
-            style={[styles.chip, action === f.value && styles.chipActive]}
-            onPress={() => {
-              setAction(f.value);
-              setPage(1);
-            }}>
-            <Text style={[styles.chipText, action === f.value && styles.chipTextActive]}>
-              {f.label}
-            </Text>
-          </Pressable>
-        ))}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsContainer}
+        style={styles.chips}>
+        {ACTION_FILTERS.map((f) => {
+          const active = action === f.value;
+          return (
+            <Pressable
+              key={f.label}
+              style={({ pressed }) => [
+                styles.chip,
+                active && styles.chipActive,
+                pressed && styles.chipPressed,
+              ]}
+              onPress={() => {
+                setAction(f.value);
+                setPage(1);
+              }}>
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                {f.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
       {isLoading ? (
-        <ActivityIndicator color="#0284c7" style={{ marginTop: 24 }} />
+        <View style={styles.loadingBox}>
+          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+        </View>
       ) : error ? (
         <ErrorBanner message={parseApiError(error).message} onRetry={() => refetch()} />
       ) : (data?.history ?? []).length === 0 ? (
@@ -98,33 +109,63 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '800', color: '#0f172a' },
-  sub: { color: '#64748b', fontSize: 13, marginTop: 2, marginBottom: 14 },
-  chips: { marginBottom: 14, maxHeight: 40 },
+  chips: {
+    marginBottom: Spacing.lg,
+    maxHeight: 38,
+  },
+  chipsContainer: {
+    gap: Spacing.xs,
+  },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 16,
-    backgroundColor: '#f1f5f9',
-    marginRight: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.light.surface,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: Colors.light.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipActive: {
-    backgroundColor: '#0284c7',
-    borderColor: '#0284c7',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
-  chipText: { fontSize: 12, fontWeight: '600', color: '#475569' },
-  chipTextActive: { color: '#fff' },
-  list: { gap: 10, marginTop: 4 },
-  emptyBox: { paddingVertical: 40, alignItems: 'center' },
-  empty: { color: '#64748b', fontSize: 14 },
+  chipPressed: {
+    opacity: 0.8,
+  },
+  chipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
+  },
+  chipTextActive: {
+    color: Colors.light.primaryForeground,
+    fontWeight: '600',
+  },
+  loadingBox: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  list: {
+    gap: Spacing.xs,
+  },
+  emptyBox: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  empty: {
+    ...Typography.body,
+    color: Colors.light.textSecondary,
+  },
   paginationRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20,
-    paddingVertical: 10,
+    marginTop: Spacing.xl,
+    paddingVertical: Spacing.sm,
   },
-  pageLabel: { color: '#64748b', fontSize: 14, fontWeight: '600' },
+  pageLabel: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+  },
 });

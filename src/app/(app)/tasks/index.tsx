@@ -13,9 +13,10 @@ import { parseApiError } from '@/api/errors';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useEmployeeStatusDashboard, useEmployeeTasks } from '@/hooks/useEmployees';
 import { useAuthStore } from '@/store/useAuthStore';
-import type { Task, TaskStatus } from '@/types/domain';
+import type { Task } from '@/types/domain';
 
 type FilterType = 'ACTIVE' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'ALL';
 const STATUS_TABS: FilterType[] = ['ACTIVE', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'ALL'];
@@ -88,21 +89,34 @@ export default function TasksWorkbenchScreen() {
         </View>
       ) : null}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
-        {STATUS_TABS.map((s) => (
-          <Pressable
-            key={s}
-            style={[styles.chip, filter === s && styles.chipActive]}
-            onPress={() => setFilter(s)}>
-            <Text style={[styles.chipText, filter === s && styles.chipTextActive]}>
-              {s.replace(/_/g, ' ')}
-            </Text>
-          </Pressable>
-        ))}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsContainer}
+        style={styles.chips}>
+        {STATUS_TABS.map((s) => {
+          const active = filter === s;
+          return (
+            <Pressable
+              key={s}
+              style={({ pressed }) => [
+                styles.chip,
+                active && styles.chipActive,
+                pressed && styles.chipPressed,
+              ]}
+              onPress={() => setFilter(s)}>
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                {s.replace(/_/g, ' ')}
+              </Text>
+            </Pressable>
+          );
+        })}
       </ScrollView>
 
       {isLoading ? (
-        <ActivityIndicator color="#0284c7" style={{ marginTop: 24 }} />
+        <View style={styles.loadingBox}>
+          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+        </View>
       ) : error ? (
         <ErrorBanner message={parseApiError(error).message} onRetry={() => activeQuery.refetch()} />
       ) : filteredTasks.length === 0 ? (
@@ -114,13 +128,17 @@ export default function TasksWorkbenchScreen() {
           </Text>
         </View>
       ) : (
-        <View style={styles.list}>
-          {filteredTasks.map((task) => (
+        <View style={styles.group}>
+          {filteredTasks.map((task, index) => (
             <Pressable
               key={task.id}
-              style={styles.card}
+              style={({ pressed }) => [
+                styles.row,
+                index > 0 && styles.rowBorder,
+                pressed && styles.rowPressed,
+              ]}
               onPress={() => router.push(`/(app)/tasks/${task.id}`)}>
-              <View style={styles.cardHeader}>
+              <View style={styles.topLine}>
                 <Text style={styles.title}>{task.title}</Text>
                 <StatusBadge status={task.status} />
               </View>
@@ -136,7 +154,7 @@ export default function TasksWorkbenchScreen() {
                   <Text style={styles.meta}>Job {task.job.jobNumber}</Text>
                 ) : null}
                 {task.assigneeName ? (
-                  <Text style={styles.assignee}>👤 {task.assigneeName}</Text>
+                  <Text style={styles.assignee}>Assigned: {task.assigneeName}</Text>
                 ) : null}
               </View>
             </Pressable>
@@ -150,61 +168,128 @@ export default function TasksWorkbenchScreen() {
 const styles = StyleSheet.create({
   viewSegment: {
     flexDirection: 'row',
-    backgroundColor: '#e2e8f0',
-    borderRadius: 8,
-    padding: 3,
-    height: 40,
-    marginBottom: 12,
+    backgroundColor: Colors.light.secondary,
+    borderRadius: Radius.md,
+    padding: 2,
+    height: 42,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   segmentBtn: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 6,
+    borderRadius: Radius.sm,
   },
-  segmentBtnActive: { backgroundColor: '#fff' },
-  segmentText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
-  segmentTextActive: { color: '#0f172a' },
-  chips: { marginBottom: 14, maxHeight: 40 },
+  segmentBtnActive: {
+    backgroundColor: Colors.light.surface,
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
+  },
+  segmentTextActive: {
+    fontWeight: '600',
+    color: Colors.light.text,
+  },
+  chips: {
+    marginBottom: Spacing.md,
+    maxHeight: 38,
+  },
+  chipsContainer: {
+    gap: Spacing.xs,
+  },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 16,
-    backgroundColor: '#f1f5f9',
-    marginRight: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.light.surface,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: Colors.light.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipActive: {
-    backgroundColor: '#0284c7',
-    borderColor: '#0284c7',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
-  chipText: { fontSize: 12, fontWeight: '600', color: '#475569' },
-  chipTextActive: { color: '#fff' },
-  list: { gap: 10 },
-  card: {
-    backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 10,
+  chipPressed: {
+    opacity: 0.8,
+  },
+  chipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
+  },
+  chipTextActive: {
+    color: Colors.light.primaryForeground,
+    fontWeight: '600',
+  },
+  loadingBox: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  group: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 6,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
   },
-  cardHeader: {
+  row: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    gap: 4,
+  },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+  },
+  rowPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  topLine: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  title: { fontWeight: '700', fontSize: 16, color: '#0f172a', flex: 1, marginRight: 8 },
-  desc: { color: '#475569', fontSize: 13, lineHeight: 18 },
+  title: {
+    ...Typography.headline,
+    fontSize: 15,
+    color: Colors.light.text,
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  desc: {
+    ...Typography.body,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
+    lineHeight: 18,
+  },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
-  meta: { color: '#64748b', fontSize: 12 },
-  assignee: { color: '#0284c7', fontSize: 12, fontWeight: '600' },
-  emptyBox: { paddingVertical: 40, alignItems: 'center' },
-  empty: { textAlign: 'center', color: '#64748b', fontSize: 14 },
+  meta: {
+    ...Typography.caption,
+    color: Colors.light.textMuted,
+  },
+  assignee: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+    fontWeight: '500',
+  },
+  emptyBox: {
+    paddingVertical: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  empty: {
+    ...Typography.body,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+  },
 });

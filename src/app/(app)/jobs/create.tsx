@@ -7,6 +7,7 @@ import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useCreateJob } from '@/hooks/useJobs';
 import { useMotorDetail } from '@/hooks/useMotors';
 
@@ -38,10 +39,9 @@ export default function CreateJobScreen() {
 
   return (
     <ScreenWrapper>
-      <Text style={styles.title}>Create new job order</Text>
-
       {motorQuery.data ? (
         <View style={styles.motorCard}>
+          <Text style={styles.cardLabel}>Target Motor</Text>
           <Text style={styles.motorNumber}>{motorQuery.data.motorNumber}</Text>
           <Text style={styles.customerName}>{motorQuery.data.customerName}</Text>
           <Text style={styles.customerPhone}>{motorQuery.data.customerPhone}</Text>
@@ -49,33 +49,57 @@ export default function CreateJobScreen() {
       ) : null}
 
       <Input
-        label="Job notes / Instructions (optional)"
+        label="Job Instructions & Notes (optional)"
         multiline
+        numberOfLines={3}
         placeholder="e.g. Rewind coil, overhaul bearings, test under load"
         value={notes}
         onChangeText={setNotes}
       />
 
-      <Button
-        title="Create Job"
-        loading={createJobMutation.isPending}
-        onPress={onSubmit}
-      />
+      <View style={styles.submitRow}>
+        <Button
+          title="Create Job Order"
+          loading={createJobMutation.isPending}
+          onPress={onSubmit}
+        />
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 20, fontWeight: '800', marginBottom: 16, color: '#0f172a' },
   motorCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    padding: 14,
-    marginBottom: 16,
+    borderColor: Colors.light.border,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
   },
-  motorNumber: { fontSize: 16, fontWeight: '700', color: '#0284c7' },
-  customerName: { fontSize: 15, fontWeight: '600', color: '#1e293b', marginTop: 2 },
-  customerPhone: { fontSize: 13, color: '#64748b', marginTop: 2 },
+  cardLabel: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginBottom: 2,
+  },
+  motorNumber: {
+    ...Typography.headline,
+    color: Colors.light.text,
+  },
+  customerName: {
+    ...Typography.body,
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
+  customerPhone: {
+    ...Typography.caption,
+    color: Colors.light.textMuted,
+    marginTop: 2,
+  },
+  submitRow: {
+    marginTop: Spacing.md,
+  },
 });

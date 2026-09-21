@@ -1,40 +1,17 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import '@/global.css';
 
-import { Platform } from 'react-native';
+import { Platform, type TextStyle } from 'react-native';
+import { Colors, StatusColors, type ThemeColors } from './colors';
 
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
-} as const;
+export { Colors, StatusColors, type ThemeColors };
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -52,6 +29,13 @@ export const Fonts = Platform.select({
 });
 
 export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
   half: 2,
   one: 4,
   two: 8,
@@ -60,6 +44,53 @@ export const Spacing = {
   five: 32,
   six: 64,
 } as const;
+
+export const Radius = {
+  sm: 6,
+  md: 10,
+  lg: 14,
+  full: 9999,
+} as const;
+
+export const Typography = {
+  largeTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: Colors.light.text,
+    letterSpacing: -0.4,
+  } as TextStyle,
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.light.text,
+    letterSpacing: -0.3,
+  } as TextStyle,
+  headline: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.light.text,
+  } as TextStyle,
+  body: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: Colors.light.text,
+    lineHeight: 21,
+  } as TextStyle,
+  subhead: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: Colors.light.textSecondary,
+    lineHeight: 18,
+  } as TextStyle,
+  caption: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: Colors.light.textMuted,
+  } as TextStyle,
+  tabular: {
+    fontVariant: ['tabular-nums'],
+  } as TextStyle,
+};
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;

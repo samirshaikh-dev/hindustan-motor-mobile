@@ -8,7 +8,7 @@ export interface ApiErrorResponse {
   success: false;
   message: string;
   code: string;
-  data: Array<{ field: string; message: string }> | null;
+  data: { field: string; message: string }[] | null;
 }
 
 export interface PaginationMeta {

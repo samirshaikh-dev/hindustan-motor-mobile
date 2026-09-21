@@ -18,6 +18,7 @@ import { Input } from '@/components/common/Input';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import {
   useEmployeeDetail,
   useEmployeeTasks,
@@ -79,7 +80,7 @@ export default function EmployeeDetailScreen() {
   if (employeeQuery.isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color="#0284c7" size="large" />
+        <ActivityIndicator color={Colors.light.textSecondary} size="small" />
       </View>
     );
   }
@@ -105,53 +106,68 @@ export default function EmployeeDetailScreen() {
         tasksQuery.refetch();
       }}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerMain}>
           <Text style={styles.name}>{emp.name}</Text>
           <Text style={styles.phone}>{emp.phone}</Text>
         </View>
         <StatusBadge status={emp.role} />
       </View>
 
-      <View style={styles.statusBanner}>
-        <Text style={styles.statusText}>
-          Account Status: {emp.isActive ? 'Active (Can receive tasks)' : 'Deactivated'}
-        </Text>
+      <View style={styles.group}>
+        <View style={styles.statusRow}>
+          <Text style={styles.statusLabel}>Roster Status</Text>
+          <Text style={styles.statusValue}>
+            {emp.isActive ? 'Active' : 'Deactivated'}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.btnRow}>
-        <Button
-          title="Call staff"
-          variant="secondary"
-          onPress={() => Linking.openURL(`tel:${emp.phone}`)}
-        />
+        <View style={styles.half}>
+          <Button
+            title="Call Staff"
+            variant="secondary"
+            onPress={() => Linking.openURL(`tel:${emp.phone}`)}
+          />
+        </View>
         {isOwner ? (
-          <Button title="Edit details" variant="secondary" onPress={openEditModal} />
+          <View style={styles.half}>
+            <Button title="Edit Profile" variant="secondary" onPress={openEditModal} />
+          </View>
         ) : null}
       </View>
 
       {isOwner ? (
         <View style={styles.toggleRow}>
           <Button
-            title={emp.isActive ? 'Deactivate staff member' : 'Activate staff member'}
-            variant={emp.isActive ? 'danger' : 'secondary'}
+            title={emp.isActive ? 'Deactivate Staff Member' : 'Activate Staff Member'}
+            variant={emp.isActive ? 'destructive' : 'secondary'}
             loading={updateMutation.isPending}
             onPress={toggleActiveStatus}
           />
         </View>
       ) : null}
 
-      <Text style={styles.section}>Assigned Tasks ({tasksQuery.data?.tasks?.length ?? 0})</Text>
+      <Text style={styles.sectionTitle}>
+        Assigned Tasks ({tasksQuery.data?.tasks?.length ?? 0})
+      </Text>
 
       {tasksQuery.isLoading ? (
-        <ActivityIndicator color="#0284c7" style={{ marginTop: 12 }} />
+        <View style={styles.loadingBox}>
+          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+        </View>
       ) : (tasksQuery.data?.tasks ?? []).length === 0 ? (
         <Text style={styles.empty}>No tasks assigned to this employee.</Text>
       ) : (
-        <View style={styles.taskList}>
-          {(tasksQuery.data?.tasks ?? []).map((task) => (
+        <View style={styles.group}>
+          {(tasksQuery.data?.tasks ?? []).map((task, idx) => (
             <Pressable
               key={task.id}
-              style={styles.task}
+              style={({ pressed }) => [
+                styles.taskRow,
+                idx > 0 && styles.rowBorder,
+                pressed && styles.rowPressed,
+              ]}
               onPress={() => router.push(`/(app)/tasks/${task.id}`)}>
               <View style={styles.taskContent}>
                 <Text style={styles.taskTitle}>{task.title}</Text>
@@ -166,14 +182,14 @@ export default function EmployeeDetailScreen() {
       )}
 
       {/* Edit Employee Modal */}
-      <Modal visible={editModalVisible} transparent animationType="slide">
+      <Modal visible={editModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Edit Staff Member</Text>
 
             <Input label="Name" value={editName} onChangeText={setEditName} />
             <Input
-              label="Phone"
+              label="Phone Number"
               keyboardType="phone-pad"
               value={editPhone}
               onChangeText={setEditPhone}
@@ -222,66 +238,148 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: Spacing.md,
   },
-  name: { fontSize: 22, fontWeight: '800', color: '#0f172a' },
-  phone: { color: '#64748b', marginTop: 4, fontSize: 14 },
-  statusBanner: {
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 8,
+  headerMain: {
+    flex: 1,
+    marginRight: Spacing.md,
+  },
+  name: {
+    ...Typography.title,
+    color: Colors.light.text,
+  },
+  phone: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
+  group: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    marginVertical: 10,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
+    marginBottom: Spacing.md,
   },
-  statusText: { fontSize: 13, color: '#334155', fontWeight: '600' },
-  btnRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  toggleRow: { marginBottom: 16 },
-  section: { fontWeight: '700', fontSize: 17, marginTop: 14, marginBottom: 8, color: '#0f172a' },
-  taskList: { gap: 8, marginBottom: 20 },
-  task: {
+  statusRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    padding: Spacing.md,
   },
-  taskContent: { flex: 1, marginRight: 8 },
-  taskTitle: { fontWeight: '600', fontSize: 15, color: '#0f172a' },
-  taskJob: { color: '#64748b', fontSize: 12, marginTop: 2 },
-  empty: { color: '#64748b', fontSize: 14, marginVertical: 8 },
+  statusLabel: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+  },
+  statusValue: {
+    ...Typography.headline,
+    fontSize: 14,
+    color: Colors.light.text,
+  },
+  btnRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  half: {
+    flex: 1,
+  },
+  toggleRow: {
+    marginBottom: Spacing.lg,
+  },
+  sectionTitle: {
+    ...Typography.headline,
+    fontSize: 14,
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+  },
+  loadingBox: {
+    paddingVertical: Spacing.xl,
+    alignItems: 'center',
+  },
+  taskRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  rowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+  },
+  rowPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  taskContent: { flex: 1, marginRight: Spacing.md },
+  taskTitle: {
+    ...Typography.headline,
+    fontSize: 15,
+    color: Colors.light.text,
+  },
+  taskJob: {
+    ...Typography.caption,
+    color: Colors.light.textSecondary,
+    marginTop: 2,
+  },
+  empty: {
+    ...Typography.subhead,
+    color: Colors.light.textMuted,
+    marginVertical: Spacing.xs,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    padding: 20,
+    padding: Spacing.lg,
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 20,
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderCurve: 'continuous',
+    padding: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 14 },
-  sublabel: { fontSize: 13, fontWeight: '600', color: '#334155', marginBottom: 6 },
+  modalTitle: {
+    ...Typography.title,
+    color: Colors.light.text,
+    marginBottom: Spacing.md,
+  },
+  sublabel: {
+    ...Typography.subhead,
+    color: Colors.light.textSecondary,
+    fontWeight: '500',
+    marginBottom: Spacing.xs,
+  },
   segment: {
     flexDirection: 'row',
-    backgroundColor: '#e2e8f0',
-    borderRadius: 8,
-    padding: 3,
-    height: 40,
-    marginBottom: 16,
+    backgroundColor: Colors.light.secondary,
+    borderRadius: Radius.md,
+    padding: 2,
+    height: 42,
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   segmentBtn: {
     flex: 1,
-    justifyContent: 'center',
+    height: '100%',
     alignItems: 'center',
-    borderRadius: 6,
+    justifyContent: 'center',
+    borderRadius: Radius.sm,
   },
-  segmentBtnActive: { backgroundColor: '#fff' },
-  segmentText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
-  segmentTextActive: { color: '#0f172a' },
-  modalButtons: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  segmentBtnActive: { backgroundColor: Colors.light.surface },
+  segmentText: { fontSize: 13, fontWeight: '500', color: Colors.light.textSecondary },
+  segmentTextActive: { fontWeight: '600', color: Colors.light.text },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
 });
