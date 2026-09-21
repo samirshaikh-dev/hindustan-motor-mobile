@@ -25,8 +25,8 @@ export default function AuthLayout() {
           fontWeight: '600',
         },
       }}>
-      <Stack.Screen name="select-actor" options={{ title: 'Select Profile' }} />
-      <Stack.Screen name="login" options={{ title: 'Owner Login' }} />
+      <Stack.Screen name="select-actor" options={{ headerShown: false }} />
+      <Stack.Screen name="login" options={{ headerShown: false }} />
     </Stack>
   );
 }

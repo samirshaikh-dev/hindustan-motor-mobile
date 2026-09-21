@@ -36,11 +36,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
     borderRadius: Radius.md,
     borderCurve: 'continuous',
+    height: 44,
     paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
     fontSize: 15,
     color: Colors.light.text,
-    backgroundColor: Colors.light.surface,
+    backgroundColor: Colors.light.backgroundSubtle,
   },
   inputError: {
     borderColor: Colors.light.destructive,

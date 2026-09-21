@@ -7,7 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import { Colors, Spacing, Typography } from '@/constants/theme';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -36,39 +36,75 @@ export default function LoginScreen() {
     }
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(auth)/select-actor');
+    }
+  };
+
   return (
     <ScreenWrapper contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Workshop Owner</Text>
-        <Text style={styles.sub}>Sign in to assign tasks and manage shop-floor staff.</Text>
-      </View>
+      <View style={styles.contentWrapper}>
+        <View style={styles.topSection}>
+          <View style={styles.brandBadge}>
+            <Text style={styles.brandBadgeGlyph}>⚡</Text>
+            <Text style={styles.brandBadgeText}>Hindustan Electricals</Text>
+          </View>
 
-      {error ? <ErrorBanner message={error} /> : null}
+          <Text style={styles.title}>Workshop Owner</Text>
+          <Text style={styles.subtitle}>
+            Sign in to assign tasks and manage shop-floor staff.
+          </Text>
+        </View>
 
-      <View style={styles.form}>
-        <Input
-          label="Email"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="owner@hindustan.com"
-        />
-        <Input
-          label="Password"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Enter password"
-        />
+        <View style={styles.card}>
+          {error ? <ErrorBanner message={error} /> : null}
 
-        <View style={styles.actions}>
-          <Button title="Sign In" loading={loading} onPress={onSubmit} />
-          <Button
-            title="Back to profile selection"
-            variant="ghost"
-            onPress={() => router.back()}
-          />
+          <View style={styles.form}>
+            <Input
+              label="Email"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="admin@motors.com"
+            />
+            <Input
+              label="Password"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••••"
+            />
+
+            <View style={styles.actions}>
+              <Button
+                title="Sign In"
+                variant="primary"
+                loading={loading}
+                onPress={onSubmit}
+              />
+              <Button
+                title="Back to profile selection"
+                variant="ghost"
+                onPress={handleBack}
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <View style={styles.securityNote}>
+            <Text style={styles.securityIcon}>🔒</Text>
+            <Text style={styles.securityText}>
+              Authorized workshop access only.
+            </Text>
+          </View>
+          <Text style={styles.footerVersion}>
+            Hindustan Electricals • v1.0.0
+          </Text>
         </View>
       </View>
     </ScreenWrapper>
@@ -77,25 +113,95 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: Spacing.xxxl,
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.xl,
   },
-  header: {
-    marginBottom: Spacing.xl,
+  contentWrapper: {
+    flex: 1,
+    justifyContent: 'space-between',
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
+    gap: Spacing.xl,
+  },
+  topSection: {
+    alignItems: 'center',
+    paddingTop: Spacing.lg,
+  },
+  brandBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.light.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginBottom: Spacing.sm,
+  },
+  brandBadgeGlyph: {
+    fontSize: 14,
+  },
+  brandBadgeText: {
+    ...Typography.caption,
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   title: {
-    ...Typography.title,
+    ...Typography.largeTitle,
+    fontSize: 24,
+    fontWeight: '700',
     color: Colors.light.text,
+    textAlign: 'center',
+    letterSpacing: -0.4,
   },
-  sub: {
+  subtitle: {
     ...Typography.subhead,
+    fontSize: 14,
     color: Colors.light.textSecondary,
+    textAlign: 'center',
     marginTop: Spacing.xs,
+  },
+  card: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: Spacing.xl,
   },
   form: {
     gap: Spacing.xs,
   },
   actions: {
-    gap: Spacing.sm,
-    marginTop: Spacing.md,
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    gap: Spacing.xs,
+  },
+  securityNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  securityIcon: {
+    fontSize: 13,
+  },
+  securityText: {
+    ...Typography.caption,
+    fontSize: 12,
+    color: Colors.light.textSecondary,
+  },
+  footerVersion: {
+    ...Typography.caption,
+    fontSize: 11,
+    color: Colors.light.textMuted,
   },
 });
