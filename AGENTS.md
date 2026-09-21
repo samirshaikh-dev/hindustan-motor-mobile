@@ -1,5 +1,7 @@
 # Expo HAS CHANGED
 
+**First read `context.md`** (`s:\client-projects\Hindustan-Electricals\hindustan-motor-mobile\context.md`) — it is the source of truth for this codebase: stack, routes, auth, domain model, services, and current git state. Read before making any change.
+
 Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
 
 Use the skills in `s:\client-projects\Hindustan-Electricals\hindustan-motor-mobile\.agents`.
