@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
@@ -15,6 +16,7 @@ export default function LoginScreen() {
   const setAdminSession = useAuthStore((s) => s.setAdminSession);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,10 +75,25 @@ export default function LoginScreen() {
             />
             <Input
               label="Password"
-              secureTextEntry
+              secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••••"
+              rightAccessory={
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                  onPress={() => setShowPassword((v) => !v)}
+                  hitSlop={8}
+                  style={styles.eyeButton}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={Colors.light.textSecondary}
+                  />
+                </Pressable>
+              }
             />
 
             <View style={styles.actions}>
@@ -176,6 +193,9 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: Spacing.xs,
+  },
+  eyeButton: {
+    padding: Spacing.xs,
   },
   actions: {
     gap: Spacing.xs,
