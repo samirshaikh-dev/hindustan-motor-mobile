@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 
 export function formatDateTime(iso?: string | null): string {
   if (!iso) return '—';
@@ -15,5 +15,14 @@ export function formatDate(iso?: string | null): string {
     return format(parseISO(iso), 'dd MMM yyyy');
   } catch {
     return iso;
+  }
+}
+
+export function formatRelativeTime(iso?: string | null): string {
+  if (!iso) return '—';
+  try {
+    return formatDistanceToNow(parseISO(iso), { addSuffix: true });
+  } catch {
+    return formatDate(iso);
   }
 }

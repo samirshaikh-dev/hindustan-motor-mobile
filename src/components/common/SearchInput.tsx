@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { Colors, Radius, Spacing } from '@/constants/theme';
 
@@ -17,7 +18,7 @@ export function SearchInput({ value, onChangeText, placeholder = 'Search...', on
 
   return (
     <View style={styles.container}>
-      <Text style={styles.searchIcon}>🔍</Text>
+      <Ionicons name="search" size={16} color={Colors.light.textMuted} />
       <TextInput
         style={styles.input}
         placeholder={placeholder}
@@ -29,8 +30,8 @@ export function SearchInput({ value, onChangeText, placeholder = 'Search...', on
         {...rest}
       />
       {value.length > 0 ? (
-        <Pressable onPress={handleClear} hitSlop={8} style={styles.clearBtn}>
-          <Text style={styles.clearText}>✕</Text>
+        <Pressable onPress={handleClear} hitSlop={8} style={styles.clearBtn} accessibilityLabel="Clear search">
+          <Ionicons name="close-circle" size={16} color={Colors.light.textMuted} />
         </Pressable>
       ) : null}
     </View>
