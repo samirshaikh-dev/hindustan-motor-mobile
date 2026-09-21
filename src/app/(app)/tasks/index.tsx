@@ -11,6 +11,7 @@ import {
 
 import { parseApiError } from '@/api/errors';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
@@ -47,7 +48,6 @@ export default function TasksWorkbenchScreen() {
       assigneeName: 'You',
     }));
   } else {
-    // Flatten active tasks from all employees
     const teamEmployees = teamDashboardQuery.data ?? [];
     const flattened: (Task & { assigneeName?: string })[] = [];
     teamEmployees.forEach((emp) => {
@@ -61,7 +61,6 @@ export default function TasksWorkbenchScreen() {
     allDisplayTasks = flattened;
   }
 
-  // Filter tasks
   const filteredTasks = allDisplayTasks.filter((t) => {
     if (filter === 'ACTIVE') return t.status === 'ASSIGNED' || t.status === 'IN_PROGRESS';
     if (filter === 'ALL') return true;
@@ -70,108 +69,120 @@ export default function TasksWorkbenchScreen() {
 
   return (
     <ScreenWrapper refreshing={isRefetching} onRefresh={() => activeQuery.refetch()}>
-      {isOwner ? (
-        <View style={styles.viewSegment}>
-          <Pressable
-            style={[styles.segmentBtn, viewMode === 'my' && styles.segmentBtnActive]}
-            onPress={() => setViewMode('my')}>
-            <Text style={[styles.segmentText, viewMode === 'my' && styles.segmentTextActive]}>
-              My Tasks
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.segmentBtn, viewMode === 'all' && styles.segmentBtnActive]}
-            onPress={() => setViewMode('all')}>
-            <Text style={[styles.segmentText, viewMode === 'all' && styles.segmentTextActive]}>
-              All Workshop Tasks
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsContainer}
-        style={styles.chips}>
-        {STATUS_TABS.map((s) => {
-          const active = filter === s;
-          return (
+      <View style={styles.contentWrapper}>
+        {isOwner ? (
+          <View style={styles.viewSegment}>
             <Pressable
-              key={s}
-              style={({ pressed }) => [
-                styles.chip,
-                active && styles.chipActive,
-                pressed && styles.chipPressed,
-              ]}
-              onPress={() => setFilter(s)}>
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                {s.replace(/_/g, ' ')}
+              style={[styles.segmentBtn, viewMode === 'my' && styles.segmentBtnActive]}
+              onPress={() => setViewMode('my')}>
+              <Text style={[styles.segmentText, viewMode === 'my' && styles.segmentTextActive]}>
+                My Tasks
               </Text>
             </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      {isLoading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
-        </View>
-      ) : error ? (
-        <ErrorBanner message={parseApiError(error).message} onRetry={() => activeQuery.refetch()} />
-      ) : filteredTasks.length === 0 ? (
-        <View style={styles.emptyBox}>
-          <Text style={styles.empty}>
-            {viewMode === 'my'
-              ? 'No tasks found in your workbench for this filter.'
-              : 'No team tasks found for this filter.'}
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.group}>
-          {filteredTasks.map((task, index) => (
             <Pressable
-              key={task.id}
-              style={({ pressed }) => [
-                styles.row,
-                index > 0 && styles.rowBorder,
-                pressed && styles.rowPressed,
-              ]}
-              onPress={() => router.push(`/(app)/tasks/${task.id}`)}>
-              <View style={styles.topLine}>
-                <Text style={styles.title}>{task.title}</Text>
-                <StatusBadge status={task.status} />
-              </View>
-
-              {task.description ? (
-                <Text style={styles.desc} numberOfLines={2}>
-                  {task.description}
-                </Text>
-              ) : null}
-
-              <View style={styles.footerRow}>
-                {task.job ? (
-                  <Text style={styles.meta}>Job {task.job.jobNumber}</Text>
-                ) : null}
-                {task.assigneeName ? (
-                  <Text style={styles.assignee}>Assigned: {task.assigneeName}</Text>
-                ) : null}
-              </View>
+              style={[styles.segmentBtn, viewMode === 'all' && styles.segmentBtnActive]}
+              onPress={() => setViewMode('all')}>
+              <Text style={[styles.segmentText, viewMode === 'all' && styles.segmentTextActive]}>
+                All Workshop Tasks
+              </Text>
             </Pressable>
-          ))}
-        </View>
-      )}
+          </View>
+        ) : null}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsContainer}
+          style={styles.chips}>
+          {STATUS_TABS.map((s) => {
+            const active = filter === s;
+            return (
+              <Pressable
+                key={s}
+                style={({ pressed }) => [
+                  styles.chip,
+                  active && styles.chipActive,
+                  pressed && styles.chipPressed,
+                ]}
+                onPress={() => setFilter(s)}>
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {s.replace(/_/g, ' ')}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        {isLoading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+          </View>
+        ) : error ? (
+          <ErrorBanner
+            message={parseApiError(error).message}
+            onRetry={() => activeQuery.refetch()}
+          />
+        ) : filteredTasks.length === 0 ? (
+          <EmptyState
+            icon="⚡"
+            title="No tasks in this view"
+            description={
+              viewMode === 'my'
+                ? 'You currently have no tasks assigned matching this filter.'
+                : 'No workshop tasks found matching this filter.'
+            }
+          />
+        ) : (
+          <View style={styles.group}>
+            {filteredTasks.map((task, index) => (
+              <Pressable
+                key={task.id}
+                style={({ pressed }) => [
+                  styles.row,
+                  index > 0 && styles.rowBorder,
+                  pressed && styles.rowPressed,
+                ]}
+                onPress={() => router.push(`/(app)/tasks/${task.id}`)}>
+                <View style={styles.topLine}>
+                  <Text style={styles.title}>{task.title}</Text>
+                  <StatusBadge status={task.status} />
+                </View>
+
+                {task.description ? (
+                  <Text style={styles.desc} numberOfLines={2}>
+                    {task.description}
+                  </Text>
+                ) : null}
+
+                <View style={styles.footerRow}>
+                  {task.job ? (
+                    <Text style={styles.meta}>Job: {task.job.jobNumber}</Text>
+                  ) : null}
+                  {task.assigneeName ? (
+                    <Text style={styles.assignee}>Assigned: {task.assigneeName}</Text>
+                  ) : null}
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+  },
   viewSegment: {
     flexDirection: 'row',
-    backgroundColor: Colors.light.secondary,
+    backgroundColor: Colors.light.backgroundSubtle,
     borderRadius: Radius.md,
-    padding: 2,
-    height: 42,
+    padding: 3,
+    height: 44,
     marginBottom: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.light.border,
@@ -191,7 +202,7 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
   },
   segmentTextActive: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.light.text,
   },
   chips: {
@@ -203,7 +214,7 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: Radius.full,
     backgroundColor: Colors.light.surface,
     borderWidth: 1,
@@ -220,12 +231,11 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
     color: Colors.light.textSecondary,
   },
   chipTextActive: {
     color: Colors.light.primaryForeground,
-    fontWeight: '600',
   },
   loadingBox: {
     paddingVertical: Spacing.xxxl,
@@ -233,7 +243,7 @@ const styles = StyleSheet.create({
   },
   group: {
     backgroundColor: Colors.light.surface,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.light.border,
     overflow: 'hidden',
@@ -253,14 +263,15 @@ const styles = StyleSheet.create({
   topLine: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   title: {
     ...Typography.headline,
     fontSize: 15,
+    fontWeight: '600',
     color: Colors.light.text,
     flex: 1,
-    marginRight: Spacing.sm,
+    marginRight: Spacing.md,
   },
   desc: {
     ...Typography.body,
@@ -276,20 +287,12 @@ const styles = StyleSheet.create({
   },
   meta: {
     ...Typography.caption,
-    color: Colors.light.textMuted,
+    fontSize: 12,
+    color: Colors.light.textSecondary,
   },
   assignee: {
     ...Typography.caption,
-    color: Colors.light.textSecondary,
-    fontWeight: '500',
-  },
-  emptyBox: {
-    paddingVertical: Spacing.xxxl,
-    alignItems: 'center',
-  },
-  empty: {
-    ...Typography.body,
-    color: Colors.light.textSecondary,
-    textAlign: 'center',
+    fontSize: 12,
+    color: Colors.light.textMuted,
   },
 });

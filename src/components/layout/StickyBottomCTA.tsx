@@ -1,20 +1,21 @@
-import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ENV } from '@/config/env';
+import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 
 export function StickyBottomCTA() {
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={[styles.button, styles.callButton]}
+      <Pressable
+        style={({ pressed }) => [styles.button, styles.callButton, pressed && styles.pressed]}
         onPress={() => Linking.openURL(`tel:${ENV.CONTACT_PHONE}`)}>
         <Text style={styles.buttonText}>Call Workshop</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.button, styles.whatsappButton]}
+      </Pressable>
+      <Pressable
+        style={({ pressed }) => [styles.button, styles.whatsappButton, pressed && styles.pressed]}
         onPress={() => Linking.openURL(ENV.WHATSAPP_URL)}>
         <Text style={styles.buttonText}>WhatsApp</Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }
@@ -26,20 +27,32 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    padding: 12,
-    backgroundColor: '#ffffff',
+    padding: Spacing.md,
+    backgroundColor: Colors.light.surface,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    elevation: 8,
+    borderTopColor: Colors.light.border,
+    gap: Spacing.sm,
   },
   button: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    height: 44,
+    borderRadius: Radius.md,
     alignItems: 'center',
-    marginHorizontal: 4,
+    justifyContent: 'center',
   },
-  callButton: { backgroundColor: '#0284c7' },
-  whatsappButton: { backgroundColor: '#16a34a' },
-  buttonText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
+  pressed: {
+    opacity: 0.85,
+  },
+  callButton: {
+    backgroundColor: Colors.light.primary,
+  },
+  whatsappButton: {
+    backgroundColor: Colors.light.success,
+  },
+  buttonText: {
+    ...Typography.headline,
+    color: Colors.light.primaryForeground,
+    fontSize: 14,
+  },
 });
+

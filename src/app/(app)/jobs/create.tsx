@@ -38,68 +38,102 @@ export default function CreateJobScreen() {
   };
 
   return (
-    <ScreenWrapper>
-      {motorQuery.data ? (
-        <View style={styles.motorCard}>
-          <Text style={styles.cardLabel}>Target Motor</Text>
-          <Text style={styles.motorNumber}>{motorQuery.data.motorNumber}</Text>
-          <Text style={styles.customerName}>{motorQuery.data.customerName}</Text>
-          <Text style={styles.customerPhone}>{motorQuery.data.customerPhone}</Text>
+    <ScreenWrapper contentContainerStyle={styles.container}>
+      <View style={styles.contentWrapper}>
+        <View style={styles.topSection}>
+          {motorQuery.data ? (
+            <View style={styles.motorCard}>
+              <Text style={styles.cardLabel}>Target Motor</Text>
+              <Text style={styles.motorNumber}>{motorQuery.data.motorNumber}</Text>
+              <Text style={styles.customerName}>{motorQuery.data.customerName}</Text>
+              <Text style={styles.customerPhone}>{motorQuery.data.customerPhone}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.formCard}>
+            <Input
+              label="Job Instructions & Notes (optional)"
+              multiline
+              numberOfLines={4}
+              placeholder="e.g. Rewind coil, overhaul bearings, test under load"
+              value={notes}
+              onChangeText={setNotes}
+            />
+          </View>
         </View>
-      ) : null}
 
-      <Input
-        label="Job Instructions & Notes (optional)"
-        multiline
-        numberOfLines={3}
-        placeholder="e.g. Rewind coil, overhaul bearings, test under load"
-        value={notes}
-        onChangeText={setNotes}
-      />
-
-      <View style={styles.submitRow}>
-        <Button
-          title="Create Job Order"
-          loading={createJobMutation.isPending}
-          onPress={onSubmit}
-        />
+        <View style={styles.submitRow}>
+          <Button
+            title="Create Job Order"
+            loading={createJobMutation.isPending}
+            onPress={onSubmit}
+          />
+        </View>
       </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.xl,
+  },
+  contentWrapper: {
+    flex: 1,
+    justifyContent: 'space-between',
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+    gap: Spacing.xl,
+  },
+  topSection: {
+    gap: Spacing.md,
+  },
   motorCard: {
     backgroundColor: Colors.light.surface,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.light.border,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
+    padding: Spacing.lg,
+    gap: 2,
   },
   cardLabel: {
     ...Typography.caption,
+    fontSize: 11,
+    fontWeight: '600',
     color: Colors.light.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
-    marginBottom: 2,
+    letterSpacing: 0.4,
   },
   motorNumber: {
     ...Typography.headline,
+    fontSize: 16,
+    fontWeight: '700',
     color: Colors.light.text,
+    marginTop: 2,
   },
   customerName: {
     ...Typography.body,
     fontSize: 14,
-    color: Colors.light.textSecondary,
-    marginTop: 2,
+    color: Colors.light.text,
+    marginTop: 1,
   },
   customerPhone: {
     ...Typography.caption,
+    fontSize: 12,
     color: Colors.light.textMuted,
-    marginTop: 2,
+  },
+  formCard: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: Spacing.lg,
   },
   submitRow: {
     marginTop: Spacing.md,
+    marginBottom: Spacing.lg,
   },
 });

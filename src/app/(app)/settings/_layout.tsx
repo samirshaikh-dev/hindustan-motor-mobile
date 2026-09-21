@@ -10,7 +10,7 @@ export default function SettingsLayout() {
         headerBackTitle: 'Back',
         headerShadowVisible: false,
         headerStyle: {
-          backgroundColor: Colors.light.background,
+          backgroundColor: Colors.light.backgroundSubtle,
         },
         headerTitleStyle: {
           fontWeight: '600',

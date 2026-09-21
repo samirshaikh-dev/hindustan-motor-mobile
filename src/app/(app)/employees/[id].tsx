@@ -16,6 +16,7 @@ import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
@@ -79,9 +80,11 @@ export default function EmployeeDetailScreen() {
 
   if (employeeQuery.isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={Colors.light.textSecondary} size="small" />
-      </View>
+      <ScreenWrapper>
+        <View style={styles.centerBox}>
+          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+        </View>
+      </ScreenWrapper>
     );
   }
 
@@ -105,200 +108,247 @@ export default function EmployeeDetailScreen() {
         employeeQuery.refetch();
         tasksQuery.refetch();
       }}>
-      <View style={styles.header}>
-        <View style={styles.headerMain}>
-          <Text style={styles.name}>{emp.name}</Text>
-          <Text style={styles.phone}>{emp.phone}</Text>
-        </View>
-        <StatusBadge status={emp.role} />
-      </View>
+      <View style={styles.contentWrapper}>
+        <View style={styles.heroCard}>
+          <View style={styles.heroTop}>
+            <View style={styles.avatarBox}>
+              <Text style={styles.avatarText}>{emp.name.charAt(0).toUpperCase()}</Text>
+            </View>
+            <View style={styles.heroMain}>
+              <Text style={styles.name}>{emp.name}</Text>
+              <Text style={styles.phone}>{emp.phone}</Text>
+            </View>
+            <StatusBadge status={emp.role} />
+          </View>
 
-      <View style={styles.group}>
-        <View style={styles.statusRow}>
-          <Text style={styles.statusLabel}>Roster Status</Text>
-          <Text style={styles.statusValue}>
-            {emp.isActive ? 'Active' : 'Deactivated'}
-          </Text>
-        </View>
-      </View>
+          <View style={styles.rosterRow}>
+            <Text style={styles.rosterLabel}>Roster Status</Text>
+            <StatusBadge status={emp.isActive ? 'IN_PROGRESS' : 'CANCELLED'} />
+          </View>
 
-      <View style={styles.btnRow}>
-        <View style={styles.half}>
-          <Button
-            title="Call Staff"
-            variant="secondary"
-            onPress={() => Linking.openURL(`tel:${emp.phone}`)}
-          />
+          <View style={styles.btnRow}>
+            <View style={styles.half}>
+              <Button
+                title="Call Staff"
+                variant="secondary"
+                onPress={() => Linking.openURL(`tel:${emp.phone}`)}
+              />
+            </View>
+            {isOwner ? (
+              <View style={styles.half}>
+                <Button title="Edit Profile" variant="secondary" onPress={openEditModal} />
+              </View>
+            ) : null}
+          </View>
         </View>
+
         {isOwner ? (
-          <View style={styles.half}>
-            <Button title="Edit Profile" variant="secondary" onPress={openEditModal} />
+          <View style={styles.toggleRow}>
+            <Button
+              title={emp.isActive ? 'Deactivate Staff Member' : 'Activate Staff Member'}
+              variant={emp.isActive ? 'destructive' : 'secondary'}
+              loading={updateMutation.isPending}
+              onPress={toggleActiveStatus}
+            />
           </View>
         ) : null}
-      </View>
 
-      {isOwner ? (
-        <View style={styles.toggleRow}>
-          <Button
-            title={emp.isActive ? 'Deactivate Staff Member' : 'Activate Staff Member'}
-            variant={emp.isActive ? 'destructive' : 'secondary'}
-            loading={updateMutation.isPending}
-            onPress={toggleActiveStatus}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>
+            Assigned Tasks ({tasksQuery.data?.tasks?.length ?? 0})
+          </Text>
+        </View>
+
+        {tasksQuery.isLoading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+          </View>
+        ) : (tasksQuery.data?.tasks ?? []).length === 0 ? (
+          <EmptyState
+            icon="📋"
+            title="No tasks assigned"
+            description="This staff member has no active or pending tasks."
           />
-        </View>
-      ) : null}
+        ) : (
+          <View style={styles.cardGroup}>
+            {(tasksQuery.data?.tasks ?? []).map((task, idx) => (
+              <Pressable
+                key={task.id}
+                style={({ pressed }) => [
+                  styles.taskRow,
+                  idx > 0 && styles.rowBorder,
+                  pressed && styles.rowPressed,
+                ]}
+                onPress={() => router.push(`/(app)/tasks/${task.id}`)}>
+                <View style={styles.taskContent}>
+                  <Text style={styles.taskTitle}>{task.title}</Text>
+                  {task.job ? (
+                    <Text style={styles.taskJob}>Job: {task.job.jobNumber}</Text>
+                  ) : null}
+                </View>
+                <StatusBadge status={task.status} />
+              </Pressable>
+            ))}
+          </View>
+        )}
 
-      <Text style={styles.sectionTitle}>
-        Assigned Tasks ({tasksQuery.data?.tasks?.length ?? 0})
-      </Text>
+        <Modal visible={editModalVisible} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Edit Staff Member</Text>
 
-      {tasksQuery.isLoading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
-        </View>
-      ) : (tasksQuery.data?.tasks ?? []).length === 0 ? (
-        <Text style={styles.empty}>No tasks assigned to this employee.</Text>
-      ) : (
-        <View style={styles.group}>
-          {(tasksQuery.data?.tasks ?? []).map((task, idx) => (
-            <Pressable
-              key={task.id}
-              style={({ pressed }) => [
-                styles.taskRow,
-                idx > 0 && styles.rowBorder,
-                pressed && styles.rowPressed,
-              ]}
-              onPress={() => router.push(`/(app)/tasks/${task.id}`)}>
-              <View style={styles.taskContent}>
-                <Text style={styles.taskTitle}>{task.title}</Text>
-                {task.job ? (
-                  <Text style={styles.taskJob}>Job {task.job.jobNumber}</Text>
-                ) : null}
+              <Input label="Full Name" value={editName} onChangeText={setEditName} />
+              <Input
+                label="Phone Number"
+                keyboardType="phone-pad"
+                value={editPhone}
+                onChangeText={setEditPhone}
+              />
+
+              <Text style={styles.sublabel}>Role</Text>
+              <View style={styles.segment}>
+                {(['EMPLOYEE', 'OWNER'] as const).map((r) => (
+                  <Pressable
+                    key={r}
+                    style={[styles.segmentBtn, editRole === r && styles.segmentBtnActive]}
+                    onPress={() => setEditRole(r)}>
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        editRole === r && styles.segmentTextActive,
+                      ]}>
+                      {r}
+                    </Text>
+                  </Pressable>
+                ))}
               </View>
-              <StatusBadge status={task.status} />
-            </Pressable>
-          ))}
-        </View>
-      )}
 
-      {/* Edit Employee Modal */}
-      <Modal visible={editModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Staff Member</Text>
-
-            <Input label="Name" value={editName} onChangeText={setEditName} />
-            <Input
-              label="Phone Number"
-              keyboardType="phone-pad"
-              value={editPhone}
-              onChangeText={setEditPhone}
-            />
-
-            <Text style={styles.sublabel}>Role</Text>
-            <View style={styles.segment}>
-              {(['EMPLOYEE', 'OWNER'] as const).map((r) => (
-                <Pressable
-                  key={r}
-                  style={[styles.segmentBtn, editRole === r && styles.segmentBtnActive]}
-                  onPress={() => setEditRole(r)}>
-                  <Text
-                    style={[
-                      styles.segmentText,
-                      editRole === r && styles.segmentTextActive,
-                    ]}>
-                    {r}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-
-            <View style={styles.modalButtons}>
-              <Button
-                title="Cancel"
-                variant="secondary"
-                onPress={() => setEditModalVisible(false)}
-              />
-              <Button
-                title="Save Changes"
-                loading={updateMutation.isPending}
-                onPress={handleSaveEdit}
-              />
+              <View style={styles.modalButtons}>
+                <Button
+                  title="Cancel"
+                  variant="ghost"
+                  onPress={() => setEditModalVisible(false)}
+                />
+                <Button
+                  title="Save Changes"
+                  loading={updateMutation.isPending}
+                  onPress={handleSaveEdit}
+                />
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.md,
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+    gap: Spacing.sm,
   },
-  headerMain: {
+  centerBox: {
+    paddingVertical: Spacing.xxxl * 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCard: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: Spacing.lg,
+    marginBottom: Spacing.xs,
+    gap: Spacing.md,
+  },
+  heroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  avatarBox: {
+    width: 48,
+    height: 48,
+    borderRadius: Radius.full,
+    backgroundColor: Colors.light.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    ...Typography.title,
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.light.primary,
+  },
+  heroMain: {
     flex: 1,
-    marginRight: Spacing.md,
   },
   name: {
     ...Typography.title,
+    fontSize: 18,
+    fontWeight: '700',
     color: Colors.light.text,
   },
   phone: {
     ...Typography.subhead,
+    fontSize: 13,
     color: Colors.light.textSecondary,
     marginTop: 2,
   },
-  group: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    overflow: 'hidden',
-    marginBottom: Spacing.md,
-  },
-  statusRow: {
+  rosterRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+    paddingTop: Spacing.sm,
   },
-  statusLabel: {
-    ...Typography.subhead,
+  rosterLabel: {
+    ...Typography.caption,
+    fontSize: 12,
+    fontWeight: '600',
     color: Colors.light.textSecondary,
-  },
-  statusValue: {
-    ...Typography.headline,
-    fontSize: 14,
-    color: Colors.light.text,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   btnRow: {
     flexDirection: 'row',
     gap: Spacing.md,
-    marginBottom: Spacing.sm,
   },
   half: {
     flex: 1,
   },
   toggleRow: {
-    marginBottom: Spacing.lg,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.md,
   },
-  sectionTitle: {
-    ...Typography.headline,
-    fontSize: 14,
-    color: Colors.light.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+  sectionHeaderRow: {
     marginTop: Spacing.md,
     marginBottom: Spacing.xs,
   },
+  sectionTitle: {
+    ...Typography.headline,
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
   loadingBox: {
-    paddingVertical: Spacing.xl,
+    paddingVertical: Spacing.xxxl,
     alignItems: 'center',
+  },
+  cardGroup: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    overflow: 'hidden',
   },
   taskRow: {
     flexDirection: 'row',
@@ -314,7 +364,10 @@ const styles = StyleSheet.create({
   rowPressed: {
     backgroundColor: Colors.light.secondary,
   },
-  taskContent: { flex: 1, marginRight: Spacing.md },
+  taskContent: {
+    flex: 1,
+    marginRight: Spacing.md,
+  },
   taskTitle: {
     ...Typography.headline,
     fontSize: 15,
@@ -322,60 +375,65 @@ const styles = StyleSheet.create({
   },
   taskJob: {
     ...Typography.caption,
+    fontSize: 12,
     color: Colors.light.textSecondary,
     marginTop: 2,
-  },
-  empty: {
-    ...Typography.subhead,
-    color: Colors.light.textMuted,
-    marginVertical: Spacing.xs,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
+    alignItems: 'center',
     padding: Spacing.lg,
   },
   modalContent: {
     backgroundColor: Colors.light.surface,
     borderRadius: Radius.lg,
-    borderCurve: 'continuous',
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    width: '100%',
+    maxWidth: 400,
+    gap: Spacing.sm,
   },
   modalTitle: {
     ...Typography.title,
+    fontSize: 18,
+    fontWeight: '700',
     color: Colors.light.text,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xs,
   },
   sublabel: {
     ...Typography.subhead,
-    color: Colors.light.textSecondary,
+    fontSize: 13,
     fontWeight: '500',
-    marginBottom: Spacing.xs,
+    color: Colors.light.textSecondary,
   },
   segment: {
     flexDirection: 'row',
-    backgroundColor: Colors.light.secondary,
+    backgroundColor: Colors.light.backgroundSubtle,
     borderRadius: Radius.md,
-    padding: 2,
-    height: 42,
-    alignItems: 'center',
-    marginBottom: Spacing.md,
+    padding: 3,
+    height: 44,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
   segmentBtn: {
     flex: 1,
-    height: '100%',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: Radius.sm,
   },
-  segmentBtnActive: { backgroundColor: Colors.light.surface },
-  segmentText: { fontSize: 13, fontWeight: '500', color: Colors.light.textSecondary },
-  segmentTextActive: { fontWeight: '600', color: Colors.light.text },
+  segmentBtnActive: {
+    backgroundColor: Colors.light.surface,
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
+  },
+  segmentTextActive: {
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

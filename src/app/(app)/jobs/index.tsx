@@ -6,13 +6,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
 import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
+import { SearchInput } from '@/components/common/SearchInput';
 import { StatusBadge } from '@/components/common/StatusBadge';
+import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
@@ -51,124 +52,126 @@ export default function JobsListScreen() {
 
   return (
     <ScreenWrapper refreshing={isRefetching} onRefresh={() => refetch()}>
-      <View style={styles.searchWrap}>
-        <TextInput
-          style={styles.search}
-          placeholder="Filter by job number, customer, motor..."
-          placeholderTextColor={Colors.light.textMuted}
-          value={search}
-          onChangeText={setSearch}
-        />
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsContainer}
-        style={styles.chips}>
-        {STATUSES.map((s) => {
-          const active = status === s;
-          return (
-            <Pressable
-              key={s}
-              style={({ pressed }) => [
-                styles.chip,
-                active && styles.chipActive,
-                pressed && styles.chipPressed,
-              ]}
-              onPress={() => {
-                setStatus(s);
-                setPage(1);
-              }}>
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                {s.replace(/_/g, ' ')}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      {isLoading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+      <View style={styles.contentWrapper}>
+        <View style={styles.searchWrap}>
+          <SearchInput
+            value={search}
+            onChangeText={(t) => {
+              setSearch(t);
+              setPage(1);
+            }}
+            placeholder="Filter by job number, customer, motor..."
+          />
         </View>
-      ) : error ? (
-        <ErrorBanner message={parseApiError(error).message} onRetry={() => refetch()} />
-      ) : filteredJobs.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.empty}>No jobs found matching criteria.</Text>
-        </View>
-      ) : (
-        <>
-          <View style={styles.group}>
-            {filteredJobs.map((job, index) => (
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsContainer}
+          style={styles.chips}>
+          {STATUSES.map((s) => {
+            const active = status === s;
+            return (
               <Pressable
-                key={job.id}
+                key={s}
                 style={({ pressed }) => [
-                  styles.row,
-                  index > 0 && styles.rowBorder,
-                  pressed && styles.rowPressed,
+                  styles.chip,
+                  active && styles.chipActive,
+                  pressed && styles.chipPressed,
                 ]}
-                onPress={() => router.push(`/(app)/jobs/${job.id}`)}>
-                <View style={styles.topLine}>
-                  <Text style={styles.num}>{job.jobNumber}</Text>
-                  <StatusBadge status={job.status} />
-                </View>
-                <Text style={styles.customer}>{job.motor?.customerName}</Text>
-                <View style={styles.metaRow}>
-                  <Text style={styles.meta}>{job.motor?.motorNumber}</Text>
-                  {job.tasks ? (
-                    <Text style={styles.meta}>· {job.tasks.length} task(s)</Text>
-                  ) : null}
-                </View>
-                {job.notes ? (
-                  <Text style={styles.notes} numberOfLines={1}>
-                    {job.notes}
-                  </Text>
-                ) : null}
+                onPress={() => {
+                  setStatus(s);
+                  setPage(1);
+                }}>
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {s.replace(/_/g, ' ')}
+                </Text>
               </Pressable>
-            ))}
-          </View>
+            );
+          })}
+        </ScrollView>
 
-          {data?.pagination && data.pagination.totalPages > 1 ? (
-            <View style={styles.paginationRow}>
-              <Button
-                title="Previous"
-                variant="secondary"
-                disabled={!data.pagination.hasPrevPage}
-                onPress={() => setPage((p) => Math.max(1, p - 1))}
-              />
-              <Text style={styles.pageLabel}>
-                Page {data.pagination.page} of {data.pagination.totalPages}
-              </Text>
-              <Button
-                title="Next"
-                variant="secondary"
-                disabled={!data.pagination.hasNextPage}
-                onPress={() => setPage((p) => p + 1)}
-              />
+        {isLoading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+          </View>
+        ) : error ? (
+          <ErrorBanner
+            message={parseApiError(error).message}
+            onRetry={() => refetch()}
+          />
+        ) : filteredJobs.length === 0 ? (
+          <EmptyState
+            icon="📋"
+            title="No jobs found"
+            description="No job orders match your active filter criteria."
+          />
+        ) : (
+          <>
+            <View style={styles.group}>
+              {filteredJobs.map((job, index) => (
+                <Pressable
+                  key={job.id}
+                  style={({ pressed }) => [
+                    styles.row,
+                    index > 0 && styles.rowBorder,
+                    pressed && styles.rowPressed,
+                  ]}
+                  onPress={() => router.push(`/(app)/jobs/${job.id}`)}>
+                  <View style={styles.topLine}>
+                    <Text style={styles.num}>{job.jobNumber}</Text>
+                    <StatusBadge status={job.status} />
+                  </View>
+                  <Text style={styles.customer}>{job.motor?.customerName}</Text>
+                  <View style={styles.metaRow}>
+                    <Text style={styles.meta}>Motor: {job.motor?.motorNumber}</Text>
+                    {job.tasks ? (
+                      <Text style={styles.meta}>· {job.tasks.length} task(s)</Text>
+                    ) : null}
+                  </View>
+                  {job.notes ? (
+                    <Text style={styles.notes} numberOfLines={1}>
+                      {job.notes}
+                    </Text>
+                  ) : null}
+                </Pressable>
+              ))}
             </View>
-          ) : null}
-        </>
-      )}
+
+            {data?.pagination && data.pagination.totalPages > 1 ? (
+              <View style={styles.paginationRow}>
+                <Button
+                  title="Previous"
+                  variant="secondary"
+                  disabled={!data.pagination.hasPrevPage}
+                  onPress={() => setPage((p) => Math.max(1, p - 1))}
+                />
+                <Text style={styles.pageLabel}>
+                  Page {data.pagination.page} of {data.pagination.totalPages}
+                </Text>
+                <Button
+                  title="Next"
+                  variant="secondary"
+                  disabled={!data.pagination.hasNextPage}
+                  onPress={() => setPage((p) => p + 1)}
+                />
+              </View>
+            ) : null}
+          </>
+        )}
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+  },
   searchWrap: {
     marginBottom: Spacing.sm,
-  },
-  search: {
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderRadius: Radius.md,
-    borderCurve: 'continuous',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 10,
-    backgroundColor: Colors.light.surface,
-    fontSize: 15,
-    color: Colors.light.text,
   },
   chips: {
     marginBottom: Spacing.md,
@@ -179,7 +182,7 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: Radius.full,
     backgroundColor: Colors.light.surface,
     borderWidth: 1,
@@ -196,12 +199,11 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
     color: Colors.light.textSecondary,
   },
   chipTextActive: {
     color: Colors.light.primaryForeground,
-    fontWeight: '600',
   },
   loadingBox: {
     paddingVertical: Spacing.xxxl,
@@ -209,7 +211,7 @@ const styles = StyleSheet.create({
   },
   group: {
     backgroundColor: Colors.light.surface,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.light.border,
     overflow: 'hidden',
@@ -233,6 +235,8 @@ const styles = StyleSheet.create({
   },
   num: {
     ...Typography.headline,
+    fontSize: 15,
+    fontWeight: '700',
     color: Colors.light.text,
   },
   customer: {
@@ -244,33 +248,28 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: 'row',
     gap: Spacing.xs,
-    marginTop: 2,
   },
   meta: {
     ...Typography.caption,
+    fontSize: 12,
     color: Colors.light.textSecondary,
   },
   notes: {
     ...Typography.caption,
+    fontSize: 12,
     color: Colors.light.textMuted,
-    marginTop: 2,
-  },
-  emptyContainer: {
-    paddingVertical: Spacing.xxxl,
-    alignItems: 'center',
-  },
-  empty: {
-    ...Typography.body,
-    color: Colors.light.textSecondary,
+    marginTop: 1,
   },
   paginationRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.xs,
   },
   pageLabel: {
     ...Typography.caption,
+    fontSize: 12,
     color: Colors.light.textSecondary,
   },
 });

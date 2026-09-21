@@ -11,6 +11,7 @@ import {
 import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
 import { TimelineItem } from '@/components/domain/TimelineItem';
+import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
@@ -38,79 +39,91 @@ export default function HistoryScreen() {
 
   return (
     <ScreenWrapper refreshing={isRefetching} onRefresh={() => refetch()}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsContainer}
-        style={styles.chips}>
-        {ACTION_FILTERS.map((f) => {
-          const active = action === f.value;
-          return (
-            <Pressable
-              key={f.label}
-              style={({ pressed }) => [
-                styles.chip,
-                active && styles.chipActive,
-                pressed && styles.chipPressed,
-              ]}
-              onPress={() => {
-                setAction(f.value);
-                setPage(1);
-              }}>
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                {f.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <View style={styles.contentWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsContainer}
+          style={styles.chips}>
+          {ACTION_FILTERS.map((f) => {
+            const active = action === f.value;
+            return (
+              <Pressable
+                key={f.label}
+                style={({ pressed }) => [
+                  styles.chip,
+                  active && styles.chipActive,
+                  pressed && styles.chipPressed,
+                ]}
+                onPress={() => {
+                  setAction(f.value);
+                  setPage(1);
+                }}>
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                  {f.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
 
-      {isLoading ? (
-        <View style={styles.loadingBox}>
-          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
-        </View>
-      ) : error ? (
-        <ErrorBanner message={parseApiError(error).message} onRetry={() => refetch()} />
-      ) : (data?.history ?? []).length === 0 ? (
-        <View style={styles.emptyBox}>
-          <Text style={styles.empty}>No audit logs found for this filter.</Text>
-        </View>
-      ) : (
-        <>
-          <View style={styles.list}>
-            {(data?.history ?? []).map((item) => (
-              <TimelineItem key={item.id} item={item} />
-            ))}
+        {isLoading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator color={Colors.light.textSecondary} size="small" />
           </View>
-
-          {data?.pagination && data.pagination.totalPages > 1 ? (
-            <View style={styles.paginationRow}>
-              <Button
-                title="Previous"
-                variant="secondary"
-                disabled={!data.pagination.hasPrevPage}
-                onPress={() => setPage((p) => Math.max(1, p - 1))}
-              />
-              <Text style={styles.pageLabel}>
-                Page {data.pagination.page} of {data.pagination.totalPages}
-              </Text>
-              <Button
-                title="Next"
-                variant="secondary"
-                disabled={!data.pagination.hasNextPage}
-                onPress={() => setPage((p) => p + 1)}
-              />
+        ) : error ? (
+          <ErrorBanner
+            message={parseApiError(error).message}
+            onRetry={() => refetch()}
+          />
+        ) : (data?.history ?? []).length === 0 ? (
+          <EmptyState
+            icon="📜"
+            title="No audit logs"
+            description="No logged events found for the selected category."
+          />
+        ) : (
+          <>
+            <View style={styles.list}>
+              {(data?.history ?? []).map((item) => (
+                <TimelineItem key={item.id} item={item} />
+              ))}
             </View>
-          ) : null}
-        </>
-      )}
+
+            {data?.pagination && data.pagination.totalPages > 1 ? (
+              <View style={styles.paginationRow}>
+                <Button
+                  title="Previous"
+                  variant="secondary"
+                  disabled={!data.pagination.hasPrevPage}
+                  onPress={() => setPage((p) => Math.max(1, p - 1))}
+                />
+                <Text style={styles.pageLabel}>
+                  Page {data.pagination.page} of {data.pagination.totalPages}
+                </Text>
+                <Button
+                  title="Next"
+                  variant="secondary"
+                  disabled={!data.pagination.hasNextPage}
+                  onPress={() => setPage((p) => p + 1)}
+                />
+              </View>
+            ) : null}
+          </>
+        )}
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+  },
   chips: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
     maxHeight: 38,
   },
   chipsContainer: {
@@ -118,7 +131,7 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: Radius.full,
     backgroundColor: Colors.light.surface,
     borderWidth: 1,
@@ -135,37 +148,35 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
     color: Colors.light.textSecondary,
   },
   chipTextActive: {
     color: Colors.light.primaryForeground,
-    fontWeight: '600',
   },
   loadingBox: {
     paddingVertical: Spacing.xxxl,
     alignItems: 'center',
   },
   list: {
-    gap: Spacing.xs,
-  },
-  emptyBox: {
-    paddingVertical: Spacing.xxxl,
-    alignItems: 'center',
-  },
-  empty: {
-    ...Typography.body,
-    color: Colors.light.textSecondary,
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: Spacing.md,
+    gap: Spacing.md,
   },
   paginationRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: Spacing.xl,
-    paddingVertical: Spacing.sm,
+    marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.xs,
+    paddingBottom: Spacing.xl,
   },
   pageLabel: {
     ...Typography.caption,
+    fontSize: 12,
     color: Colors.light.textSecondary,
   },
 });

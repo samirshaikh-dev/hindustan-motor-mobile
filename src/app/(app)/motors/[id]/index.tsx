@@ -27,9 +27,11 @@ export default function MotorDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={Colors.light.textSecondary} size="small" />
-      </View>
+      <ScreenWrapper>
+        <View style={styles.centerBox}>
+          <ActivityIndicator color={Colors.light.textSecondary} size="small" />
+        </View>
+      </ScreenWrapper>
     );
   }
 
@@ -51,222 +53,250 @@ export default function MotorDetailScreen() {
 
   return (
     <ScreenWrapper refreshing={isRefetching} onRefresh={() => refetch()}>
-      <View style={styles.header}>
-        <View style={styles.headerMain}>
-          <Text style={styles.number}>{data.motorNumber}</Text>
-          <Text style={styles.customer}>{data.customerName}</Text>
-          <Text style={styles.phone}>{data.customerPhone}</Text>
-        </View>
-        <Button title="Call" variant="secondary" onPress={callCustomer} />
-      </View>
+      <View style={styles.contentWrapper}>
+        <View style={styles.heroCard}>
+          <View style={styles.heroTop}>
+            <View style={styles.heroMain}>
+              <Text style={styles.motorNum}>{data.motorNumber}</Text>
+              <Text style={styles.customer}>{data.customerName}</Text>
+              <Text style={styles.phone}>{data.customerPhone}</Text>
+            </View>
+            <Button title="Call Customer" variant="secondary" onPress={callCustomer} />
+          </View>
 
-      <View style={styles.metaRow}>
-        <Text style={styles.meta}>Received {formatDateTime(data.receivedAt)}</Text>
-        {data.expectedDeliveryAt ? (
-          <Text style={styles.meta}>· Due {formatDateTime(data.expectedDeliveryAt)}</Text>
+          <View style={styles.heroDates}>
+            <Text style={styles.dateLabel}>
+              Received {formatDateTime(data.receivedAt)}
+            </Text>
+            {data.expectedDeliveryAt ? (
+              <Text style={styles.dateLabel}>
+                · Due {formatDateTime(data.expectedDeliveryAt)}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Specifications</Text>
+        <View style={styles.cardGroup}>
+          <View style={styles.specRow}>
+            <Text style={styles.specKey}>Power Rating</Text>
+            <Text style={styles.specVal}>{powerText ?? '—'}</Text>
+          </View>
+          <View style={[styles.specRow, styles.rowBorder]}>
+            <Text style={styles.specKey}>Speed (RPM)</Text>
+            <Text style={styles.specVal}>{data.rpm ? `${data.rpm} RPM` : '—'}</Text>
+          </View>
+          <View style={[styles.specRow, styles.rowBorder]}>
+            <Text style={styles.specKey}>Supply Phase</Text>
+            <Text style={styles.specVal}>{data.phase ?? '—'}</Text>
+          </View>
+          <View style={[styles.specRow, styles.rowBorder]}>
+            <Text style={styles.specKey}>Manufacturer / Brand</Text>
+            <Text style={styles.specVal}>{data.brand ?? '—'}</Text>
+          </View>
+          <View style={[styles.specRow, styles.rowBorder]}>
+            <Text style={styles.specKey}>Motor Type</Text>
+            <Text style={styles.specVal}>{data.motorType ?? '—'}</Text>
+          </View>
+          <View style={[styles.specRow, styles.rowBorder]}>
+            <Text style={styles.specKey}>Serial Number</Text>
+            <Text style={styles.specVal}>{data.serialNumber ?? '—'}</Text>
+          </View>
+        </View>
+
+        {data.complaint ? (
+          <>
+            <Text style={styles.sectionTitle}>Reported Problem</Text>
+            <View style={styles.noteCard}>
+              <Text style={styles.noteText}>{data.complaint}</Text>
+            </View>
+          </>
         ) : null}
-      </View>
 
-      {/* Specifications */}
-      <Text style={styles.sectionTitle}>Specifications</Text>
-      <View style={styles.group}>
-        <View style={styles.specRow}>
-          <Text style={styles.specKey}>Power</Text>
-          <Text style={styles.specVal}>{powerText ?? '—'}</Text>
-        </View>
-        <View style={[styles.specRow, styles.rowBorder]}>
-          <Text style={styles.specKey}>RPM</Text>
-          <Text style={styles.specVal}>{data.rpm ? `${data.rpm} RPM` : '—'}</Text>
-        </View>
-        <View style={[styles.specRow, styles.rowBorder]}>
-          <Text style={styles.specKey}>Phase</Text>
-          <Text style={styles.specVal}>{data.phase ?? '—'}</Text>
-        </View>
-        <View style={[styles.specRow, styles.rowBorder]}>
-          <Text style={styles.specKey}>Brand</Text>
-          <Text style={styles.specVal}>{data.brand ?? '—'}</Text>
-        </View>
-        <View style={[styles.specRow, styles.rowBorder]}>
-          <Text style={styles.specKey}>Type</Text>
-          <Text style={styles.specVal}>{data.motorType ?? '—'}</Text>
-        </View>
-        <View style={[styles.specRow, styles.rowBorder]}>
-          <Text style={styles.specKey}>Serial Number</Text>
-          <Text style={styles.specVal}>{data.serialNumber ?? '—'}</Text>
-        </View>
-      </View>
+        {data.notes ? (
+          <>
+            <Text style={styles.sectionTitle}>Internal Workshop Notes</Text>
+            <View style={styles.noteCard}>
+              <Text style={styles.noteText}>{data.notes}</Text>
+            </View>
+          </>
+        ) : null}
 
-      {/* Complaint */}
-      {data.complaint ? (
-        <>
-          <Text style={styles.sectionTitle}>Reported Problem</Text>
-          <View style={styles.noteBox}>
-            <Text style={styles.noteText}>{data.complaint}</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Job Orders</Text>
+          <Button
+            title="New Job"
+            variant="secondary"
+            onPress={() => router.push(`/(app)/jobs/create?motorId=${id}`)}
+          />
+        </View>
+
+        {data.jobs && data.jobs.length > 0 ? (
+          <View style={styles.cardGroup}>
+            {data.jobs.map((job, idx) => (
+              <Pressable
+                key={job.id}
+                style={({ pressed }) => [
+                  styles.jobRow,
+                  idx > 0 && styles.rowBorder,
+                  pressed && styles.rowPressed,
+                ]}
+                onPress={() => router.push(`/(app)/jobs/${job.id}`)}>
+                <View style={styles.jobInfo}>
+                  <Text style={styles.jobNum}>{job.jobNumber}</Text>
+                  {job.notes ? (
+                    <Text style={styles.jobNotes} numberOfLines={1}>
+                      {job.notes}
+                    </Text>
+                  ) : null}
+                </View>
+                <StatusBadge status={job.status} />
+              </Pressable>
+            ))}
           </View>
-        </>
-      ) : null}
-
-      {/* Internal notes */}
-      {data.notes ? (
-        <>
-          <Text style={styles.sectionTitle}>Internal Notes</Text>
-          <View style={styles.noteBox}>
-            <Text style={styles.noteText}>{data.notes}</Text>
+        ) : (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No job orders created for this motor yet.</Text>
           </View>
-        </>
-      ) : null}
+        )}
 
-      {/* Job orders */}
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Job Orders</Text>
-        <Button
-          title="New Job"
-          variant="secondary"
-          onPress={() => router.push(`/(app)/jobs/create?motorId=${id}`)}
-        />
-      </View>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Inspection Photos</Text>
+          <Button
+            title="Add Photo"
+            variant="secondary"
+            onPress={() => router.push(`/(app)/motors/${id}/upload`)}
+          />
+        </View>
 
-      {data.jobs && data.jobs.length > 0 ? (
-        <View style={styles.group}>
-          {data.jobs.map((job, idx) => (
-            <Pressable
-              key={job.id}
-              style={({ pressed }) => [
-                styles.jobRow,
-                idx > 0 && styles.rowBorder,
-                pressed && styles.rowPressed,
-              ]}
-              onPress={() => router.push(`/(app)/jobs/${job.id}`)}>
-              <View style={styles.jobInfo}>
-                <Text style={styles.jobNum}>{job.jobNumber}</Text>
-                {job.notes ? (
-                  <Text style={styles.jobNotes} numberOfLines={1}>
-                    {job.notes}
-                  </Text>
-                ) : null}
-              </View>
-              <StatusBadge status={job.status} />
+        {data.images && data.images.length > 0 ? (
+          <View style={styles.gallery}>
+            {data.images.map((img) => (
+              <Pressable key={img.id} onPress={() => setActivePhotoUrl(img.secureUrl)}>
+                <Image source={{ uri: img.secureUrl }} style={styles.thumb} />
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No inspection photos uploaded yet.</Text>
+          </View>
+        )}
+
+        <View style={styles.footerActions}>
+          <Button
+            title="Edit Motor Specifications"
+            variant="secondary"
+            onPress={() => router.push(`/(app)/motors/${id}/edit`)}
+          />
+          <Button
+            title="View Audit Timeline"
+            variant="ghost"
+            onPress={() => router.push(`/(app)/motors/${id}/history`)}
+          />
+        </View>
+
+        <Modal visible={!!activePhotoUrl} transparent animationType="fade">
+          <View style={styles.modalBg}>
+            <Pressable style={styles.modalCloseBtn} onPress={() => setActivePhotoUrl(null)}>
+              <Text style={styles.modalCloseText}>Close</Text>
             </Pressable>
-          ))}
-        </View>
-      ) : (
-        <Text style={styles.emptyText}>No job orders created for this motor yet.</Text>
-      )}
-
-      {/* Photos */}
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Inspection Photos</Text>
-        <Button
-          title="Add Photo"
-          variant="secondary"
-          onPress={() => router.push(`/(app)/motors/${id}/upload`)}
-        />
+            {activePhotoUrl ? (
+              <Image
+                source={{ uri: activePhotoUrl }}
+                style={styles.fullImage}
+                contentFit="contain"
+              />
+            ) : null}
+          </View>
+        </Modal>
       </View>
-
-      {data.images && data.images.length > 0 ? (
-        <View style={styles.gallery}>
-          {data.images.map((img) => (
-            <Pressable key={img.id} onPress={() => setActivePhotoUrl(img.secureUrl)}>
-              <Image source={{ uri: img.secureUrl }} style={styles.thumb} />
-            </Pressable>
-          ))}
-        </View>
-      ) : (
-        <Text style={styles.emptyText}>No photos uploaded yet.</Text>
-      )}
-
-      {/* Quiet Secondary Navigation Links */}
-      <View style={styles.footerActions}>
-        <Button
-          title="Edit Motor Specifications"
-          variant="secondary"
-          onPress={() => router.push(`/(app)/motors/${id}/edit`)}
-        />
-        <Button
-          title="View Motor Audit Timeline"
-          variant="ghost"
-          onPress={() => router.push(`/(app)/motors/${id}/history`)}
-        />
-      </View>
-
-      {/* Photo Modal */}
-      <Modal visible={!!activePhotoUrl} transparent animationType="fade">
-        <View style={styles.modalBg}>
-          <Pressable style={styles.modalCloseBtn} onPress={() => setActivePhotoUrl(null)}>
-            <Text style={styles.modalCloseText}>Close</Text>
-          </Pressable>
-          {activePhotoUrl ? (
-            <Image
-              source={{ uri: activePhotoUrl }}
-              style={styles.fullImage}
-              contentFit="contain"
-            />
-          ) : null}
-        </View>
-      </Modal>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+    gap: Spacing.sm,
   },
-  header: {
+  centerBox: {
+    paddingVertical: Spacing.xxxl * 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCard: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: Spacing.lg,
+    marginBottom: Spacing.sm,
+    gap: Spacing.md,
+  },
+  heroTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: Spacing.xs,
   },
-  headerMain: {
+  heroMain: {
     flex: 1,
     marginRight: Spacing.md,
   },
-  number: {
+  motorNum: {
     ...Typography.title,
+    fontSize: 20,
+    fontWeight: '700',
     color: Colors.light.text,
   },
   customer: {
     ...Typography.headline,
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '600',
     color: Colors.light.text,
     marginTop: 2,
   },
   phone: {
     ...Typography.subhead,
+    fontSize: 13,
     color: Colors.light.textSecondary,
     marginTop: 2,
   },
-  metaRow: {
+  heroDates: {
     flexDirection: 'row',
-    gap: 4,
-    marginBottom: Spacing.lg,
+    flexWrap: 'wrap',
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+    paddingTop: Spacing.sm,
   },
-  meta: {
+  dateLabel: {
     ...Typography.caption,
+    fontSize: 12,
     color: Colors.light.textMuted,
   },
   sectionTitle: {
     ...Typography.headline,
     fontSize: 13,
+    fontWeight: '600',
     color: Colors.light.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
-    marginTop: Spacing.lg,
+    letterSpacing: 0.4,
+    marginTop: Spacing.md,
     marginBottom: Spacing.xs,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: Spacing.lg,
+    marginTop: Spacing.md,
     marginBottom: Spacing.xs,
   },
-  group: {
+  cardGroup: {
     backgroundColor: Colors.light.surface,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.light.border,
     overflow: 'hidden',
@@ -275,31 +305,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: Spacing.sm + 2,
+    paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
   },
   rowBorder: {
     borderTopWidth: 1,
     borderTopColor: Colors.light.borderSubtle,
   },
-  rowPressed: {
-    backgroundColor: Colors.light.secondary,
-  },
   specKey: {
     ...Typography.subhead,
+    fontSize: 14,
     color: Colors.light.textSecondary,
   },
   specVal: {
-    ...Typography.body,
-    fontWeight: '500',
+    ...Typography.headline,
+    fontSize: 14,
     color: Colors.light.text,
   },
-  noteBox: {
+  noteCard: {
     backgroundColor: Colors.light.surface,
-    padding: Spacing.md,
-    borderRadius: Radius.md,
+    borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.light.border,
+    padding: Spacing.lg,
   },
   noteText: {
     ...Typography.body,
@@ -309,10 +337,13 @@ const styles = StyleSheet.create({
   },
   jobRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
+  },
+  rowPressed: {
+    backgroundColor: Colors.light.secondary,
   },
   jobInfo: {
     flex: 1,
@@ -324,57 +355,61 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
   },
   jobNotes: {
-    ...Typography.caption,
+    ...Typography.subhead,
+    fontSize: 13,
     color: Colors.light.textSecondary,
     marginTop: 2,
+  },
+  emptyCard: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: Spacing.lg,
+    alignItems: 'center',
+  },
+  emptyText: {
+    ...Typography.subhead,
+    fontSize: 13,
+    color: Colors.light.textSecondary,
   },
   gallery: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
-    marginTop: Spacing.xs,
   },
   thumb: {
-    width: 80,
-    height: 80,
-    borderRadius: Radius.sm,
-    backgroundColor: Colors.light.secondary,
+    width: 84,
+    height: 84,
+    borderRadius: Radius.md,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
-  emptyText: {
-    ...Typography.subhead,
-    color: Colors.light.textMuted,
-    marginVertical: Spacing.xs,
-  },
   footerActions: {
-    marginTop: Spacing.xl,
     gap: Spacing.sm,
+    marginTop: Spacing.xl,
     marginBottom: Spacing.xxl,
   },
   modalBg: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.92)',
+    backgroundColor: 'rgba(0,0,0,0.9)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCloseBtn: {
     position: 'absolute',
-    top: 54,
+    top: 50,
     right: 20,
     zIndex: 10,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.full,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: Spacing.sm,
   },
   modalCloseText: {
-    color: Colors.light.primaryForeground,
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: '600',
-    fontSize: 13,
   },
   fullImage: {
     width: '90%',
-    height: '75%',
+    height: '80%',
   },
 });

@@ -86,208 +86,240 @@ export default function RegisterMotorScreen() {
 
   return (
     <ScreenWrapper>
-      <Controller
-        control={control}
-        name="customerName"
-        render={({ field: { onChange, value } }) => (
-          <Input
-            label="Customer Name"
-            placeholder="e.g. Ramesh Patel"
-            value={value}
-            onChangeText={onChange}
-            error={errors.customerName?.message}
-          />
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="customerPhone"
-        render={({ field: { onChange, value } }) => (
-          <Input
-            label="Customer Phone"
-            placeholder="e.g. 9825012345"
-            keyboardType="phone-pad"
-            value={value}
-            onChangeText={onChange}
-            error={errors.customerPhone?.message}
-          />
-        )}
-      />
-
-      <View style={styles.row}>
-        <View style={styles.half}>
+      <View style={styles.contentWrapper}>
+        <Text style={styles.sectionHeader}>Customer Details</Text>
+        <View style={styles.card}>
           <Controller
             control={control}
-            name="brand"
+            name="customerName"
             render={({ field: { onChange, value } }) => (
               <Input
-                label="Brand"
-                placeholder="e.g. Crompton"
+                label="Customer Name *"
+                placeholder="e.g. Ramesh Patel"
+                value={value}
+                onChangeText={onChange}
+                error={errors.customerName?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="customerPhone"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                label="Customer Phone *"
+                placeholder="e.g. 9825012345"
+                keyboardType="phone-pad"
+                value={value}
+                onChangeText={onChange}
+                error={errors.customerPhone?.message}
+              />
+            )}
+          />
+        </View>
+
+        <Text style={styles.sectionHeader}>Motor Specifications</Text>
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <View style={styles.half}>
+              <Controller
+                control={control}
+                name="brand"
+                render={({ field: { onChange, value } }) => (
+                  <Input
+                    label="Brand"
+                    placeholder="e.g. Crompton"
+                    value={value}
+                    onChangeText={onChange}
+                  />
+                )}
+              />
+            </View>
+            <View style={styles.half}>
+              <Controller
+                control={control}
+                name="motorType"
+                render={({ field: { onChange, value } }) => (
+                  <Input
+                    label="Motor Type"
+                    placeholder="e.g. Induction"
+                    value={value}
+                    onChangeText={onChange}
+                  />
+                )}
+              />
+            </View>
+          </View>
+
+          <View style={styles.row}>
+            <View style={styles.half}>
+              <Controller
+                control={control}
+                name="power"
+                render={({ field: { onChange, value } }) => (
+                  <Input
+                    label={`Power (${powerUnit})`}
+                    placeholder="e.g. 5"
+                    keyboardType="numeric"
+                    value={value}
+                    onChangeText={onChange}
+                  />
+                )}
+              />
+            </View>
+            <View style={styles.half}>
+              <Text style={styles.segmentLabel}>Unit</Text>
+              <View style={styles.segment}>
+                {(['HP', 'kW'] as const).map((unit) => (
+                  <Pressable
+                    key={unit}
+                    style={[styles.segmentBtn, powerUnit === unit && styles.segmentBtnActive]}
+                    onPress={() => setPowerUnit(unit)}>
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        powerUnit === unit && styles.segmentTextActive,
+                      ]}>
+                      {unit}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.row}>
+            <View style={styles.half}>
+              <Controller
+                control={control}
+                name="rpm"
+                render={({ field: { onChange, value } }) => (
+                  <Input
+                    label="Speed (RPM)"
+                    placeholder="1440 / 2880"
+                    keyboardType="numeric"
+                    value={value}
+                    onChangeText={onChange}
+                  />
+                )}
+              />
+            </View>
+            <View style={styles.half}>
+              <Text style={styles.segmentLabel}>Supply Phase</Text>
+              <View style={styles.segment}>
+                {(['Single', 'Three'] as const).map((p) => (
+                  <Pressable
+                    key={p}
+                    style={[styles.segmentBtn, phase === p && styles.segmentBtnActive]}
+                    onPress={() => setPhase(p)}>
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        phase === p && styles.segmentTextActive,
+                      ]}>
+                      {p}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <Controller
+            control={control}
+            name="serialNumber"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                label="Serial Number (optional)"
+                placeholder="From motor nameplate"
                 value={value}
                 onChangeText={onChange}
               />
             )}
           />
         </View>
-        <View style={styles.half}>
+
+        <Text style={styles.sectionHeader}>Service Details & Timeline</Text>
+        <View style={styles.card}>
           <Controller
             control={control}
-            name="motorType"
+            name="complaint"
             render={({ field: { onChange, value } }) => (
               <Input
-                label="Motor Type"
-                placeholder="e.g. Induction"
+                label="Customer Reported Problem"
+                placeholder="e.g. Burnt smell, bearing jam, humming"
                 value={value}
                 onChangeText={onChange}
               />
             )}
           />
-        </View>
-      </View>
 
-      <View style={styles.row}>
-        <View style={styles.half}>
           <Controller
             control={control}
-            name="power"
+            name="expectedDeliveryDays"
             render={({ field: { onChange, value } }) => (
               <Input
-                label={`Power (${powerUnit})`}
-                placeholder="e.g. 5"
+                label="Expected Delivery (in days)"
+                placeholder="3"
                 keyboardType="numeric"
                 value={value}
                 onChangeText={onChange}
               />
             )}
           />
-        </View>
-        <View style={styles.half}>
-          <Text style={styles.segmentLabel}>Unit</Text>
-          <View style={styles.segment}>
-            {(['HP', 'kW'] as const).map((unit) => (
-              <Pressable
-                key={unit}
-                style={[styles.segmentBtn, powerUnit === unit && styles.segmentBtnActive]}
-                onPress={() => setPowerUnit(unit)}>
-                <Text
-                  style={[
-                    styles.segmentText,
-                    powerUnit === unit && styles.segmentTextActive,
-                  ]}>
-                  {unit}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      </View>
 
-      <View style={styles.row}>
-        <View style={styles.half}>
           <Controller
             control={control}
-            name="rpm"
+            name="notes"
             render={({ field: { onChange, value } }) => (
               <Input
-                label="RPM"
-                placeholder="1440 / 2880"
-                keyboardType="numeric"
+                label="Internal Workshop Notes (optional)"
+                placeholder="Condition on arrival, urgent priority, etc."
                 value={value}
                 onChangeText={onChange}
               />
             )}
           />
         </View>
-        <View style={styles.half}>
-          <Text style={styles.segmentLabel}>Phase</Text>
-          <View style={styles.segment}>
-            {(['Single', 'Three'] as const).map((p) => (
-              <Pressable
-                key={p}
-                style={[styles.segmentBtn, phase === p && styles.segmentBtnActive]}
-                onPress={() => setPhase(p)}>
-                <Text
-                  style={[
-                    styles.segmentText,
-                    phase === p && styles.segmentTextActive,
-                  ]}>
-                  {p}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+
+        <View style={styles.submitRow}>
+          <Button
+            title="Register Motor"
+            loading={isSubmitting}
+            onPress={onSubmit}
+          />
         </View>
-      </View>
-
-      <Controller
-        control={control}
-        name="serialNumber"
-        render={({ field: { onChange, value } }) => (
-          <Input
-            label="Serial / Model No. (optional)"
-            placeholder="e.g. MTR-2024-001"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="expectedDeliveryDays"
-        render={({ field: { onChange, value } }) => (
-          <Input
-            label="Expected Delivery (days from today)"
-            placeholder="3"
-            keyboardType="numeric"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="complaint"
-        render={({ field: { onChange, value } }) => (
-          <Input
-            label="Problem Description / Complaint"
-            multiline
-            numberOfLines={3}
-            placeholder="e.g. Burnt coil, smoke observed, bearing seized"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
-
-      <Controller
-        control={control}
-        name="notes"
-        render={({ field: { onChange, value } }) => (
-          <Input
-            label="Internal Notes (optional)"
-            multiline
-            placeholder="e.g. Customer requested quick turnaround"
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
-
-      <View style={styles.submitRow}>
-        <Button
-          title="Register & Create Job"
-          loading={isSubmitting}
-          onPress={onSubmit}
-        />
       </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 600,
+    alignSelf: 'center',
+    gap: Spacing.sm,
+  },
+  sectionHeader: {
+    ...Typography.headline,
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+  },
+  card: {
+    backgroundColor: Colors.light.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    padding: Spacing.lg,
+    gap: Spacing.xs,
+  },
   row: {
     flexDirection: 'row',
     gap: Spacing.md,
@@ -303,18 +335,15 @@ const styles = StyleSheet.create({
   },
   segment: {
     flexDirection: 'row',
-    backgroundColor: Colors.light.secondary,
+    height: 44,
+    backgroundColor: Colors.light.backgroundSubtle,
     borderRadius: Radius.md,
-    padding: 2,
-    height: 42,
-    alignItems: 'center',
-    marginBottom: Spacing.md,
+    padding: 3,
     borderWidth: 1,
     borderColor: Colors.light.border,
   },
   segmentBtn: {
     flex: 1,
-    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: Radius.sm,
@@ -328,11 +357,11 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
   },
   segmentTextActive: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.light.text,
   },
   submitRow: {
     marginTop: Spacing.lg,
-    marginBottom: Spacing.xxl,
+    marginBottom: Spacing.xxxl,
   },
 });
