@@ -25,7 +25,7 @@ export const jobService = {
     return res.data.data;
   },
 
-  async getTasks(jobId: string, params?: { status?: string; page?: number }) {
+  async getTasks(jobId: string, params?: { status?: string; page?: number; limit?: number }) {
     const res = await apiClient.get<
       ApiResponse<{ tasks: Task[]; pagination: PaginationMeta }>
     >(`/jobs/${jobId}/tasks`, { params });

@@ -42,15 +42,15 @@ export interface Employee {
 
 export interface MotorImage {
   id: string;
-  motorId: string;
-  publicId: string;
+  motorId?: string;
+  publicId?: string;
   secureUrl: string;
-  resourceType: string;
+  resourceType?: string;
   width?: number;
   height?: number;
   bytes?: number;
   format?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface Motor {

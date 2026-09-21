@@ -1,11 +1,11 @@
 import { apiClient } from '@/api/client';
 import type { ApiResponse, PaginationMeta } from '@/types/api';
-import type { Employee, EmployeeStatusRow, Task } from '@/types/domain';
+import type { Employee, EmployeeStatusRow, Role, Task } from '@/types/domain';
 
 export const employeeService = {
   async list(params?: {
     isActive?: boolean;
-    role?: string;
+    role?: Role | string;
     search?: string;
     page?: number;
     limit?: number;
@@ -26,12 +26,12 @@ export const employeeService = {
     return res.data.data;
   },
 
-  async create(payload: { name: string; phone: string; role?: string }) {
+  async create(payload: { name: string; phone: string; role?: Role | string }) {
     const res = await apiClient.post<ApiResponse<Employee>>('/employees', payload);
     return res.data.data;
   },
 
-  async update(id: string, payload: Partial<{ name: string; phone: string; role: string; isActive: boolean }>) {
+  async update(id: string, payload: Partial<{ name: string; phone: string; role: Role | string; isActive: boolean }>) {
     const res = await apiClient.patch<ApiResponse<Employee>>(`/employees/${id}`, payload);
     return res.data.data;
   },
