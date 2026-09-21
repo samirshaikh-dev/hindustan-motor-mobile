@@ -1,62 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
-import { StatusBadge } from '@/components/common/StatusBadge';
-import { ErrorBanner } from '@/components/feedback/ErrorBanner';
 import { ScreenWrapper } from '@/components/layout/ScreenWrapper';
-import { queryKeys } from '@/config/queryKeys';
 import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
-import { employeeService } from '@/services/employee.service';
-import { useAuthStore } from '@/store/useAuthStore';
-import type { Employee } from '@/types/domain';
 
 export default function SelectActorScreen() {
-  const setActiveActor = useAuthStore((s) => s.setActiveActor);
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const activeActorId = useAuthStore((s) => s.activeActorId);
-  const [showStaffRoster, setShowStaffRoster] = useState(false);
-
-  const { data, isLoading, error, refetch, isRefetching } = useQuery({
-    queryKey: queryKeys.employees.list({ isActive: true }),
-    queryFn: () => employeeService.list({ isActive: true, limit: 100 }),
-    enabled: showStaffRoster,
-  });
-
-  const onSelect = async (employee: Employee) => {
-    try {
-      await setActiveActor(employee.id, employee.name, employee.role);
-      router.replace('/(app)');
-    } catch (e) {
-      const msg = parseApiError(e).message;
-      if (Platform.OS === 'web') {
-        window.alert(msg);
-      } else {
-        Alert.alert('Error', msg);
-      }
-    }
-  };
-
-  const handleStaffProfilePress = () => {
-    setShowStaffRoster((prev) => !prev);
-  };
-
   return (
-    <ScreenWrapper
-      refreshing={isRefetching}
-      onRefresh={() => refetch()}
-      contentContainerStyle={styles.container}>
+    <ScreenWrapper contentContainerStyle={styles.container}>
       <View style={styles.contentWrapper}>
         <View style={styles.topSection}>
           <View style={styles.logoContainer}>
@@ -98,57 +49,15 @@ export default function SelectActorScreen() {
               </View>
               <View style={styles.cardInfo}>
                 <Text style={styles.cardTitle}>Staff Profile</Text>
-                <Text style={styles.cardSub}>Select your profile</Text>
+                <Text style={styles.cardSub}>Choose your name to start work</Text>
               </View>
             </View>
 
             <Button
-              title={showStaffRoster ? 'Hide Profiles' : 'Select Profile'}
+              title="Select Profile"
               variant="secondary"
-              onPress={handleStaffProfilePress}
+              onPress={() => router.push('/(auth)/staff-select')}
             />
-
-            {showStaffRoster ? (
-              <View style={styles.rosterContainer}>
-                {isLoading ? (
-                  <View style={styles.loadingBox}>
-                    <ActivityIndicator
-                      size="small"
-                      color={Colors.light.textSecondary}
-                    />
-                  </View>
-                ) : error ? (
-                  <ErrorBanner
-                    message={parseApiError(error).message}
-                    onRetry={() => refetch()}
-                  />
-                ) : (
-                  <View style={styles.rosterList}>
-                    {(data?.employees ?? []).map((emp, index) => (
-                      <Pressable
-                        key={emp.id}
-                        style={({ pressed }) => [
-                          styles.rosterRow,
-                          index > 0 && styles.rowBorder,
-                          pressed && styles.rowPressed,
-                        ]}
-                        onPress={() => onSelect(emp)}>
-                        <View style={styles.rowInfo}>
-                          <Text style={styles.name}>{emp.name}</Text>
-                          <Text style={styles.meta}>{emp.phone}</Text>
-                        </View>
-                        <StatusBadge status={emp.role} />
-                      </Pressable>
-                    ))}
-                    {(data?.employees?.length ?? 0) === 0 ? (
-                      <View style={styles.emptyBox}>
-                        <Text style={styles.hint}>No active employees found.</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                )}
-              </View>
-            ) : null}
           </View>
         </View>
 
@@ -266,61 +175,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Colors.light.textSecondary,
     marginTop: 2,
-  },
-  rosterContainer: {
-    marginTop: Spacing.xs,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.light.borderSubtle,
-  },
-  rosterList: {
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    overflow: 'hidden',
-    backgroundColor: Colors.light.surface,
-  },
-  rosterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-  },
-  rowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.light.borderSubtle,
-  },
-  rowPressed: {
-    backgroundColor: Colors.light.secondary,
-  },
-  rowInfo: {
-    flex: 1,
-    marginRight: Spacing.md,
-  },
-  name: {
-    ...Typography.headline,
-    fontSize: 15,
-    color: Colors.light.text,
-  },
-  meta: {
-    ...Typography.subhead,
-    fontSize: 13,
-    color: Colors.light.textSecondary,
-    marginTop: 2,
-  },
-  emptyBox: {
-    padding: Spacing.lg,
-    alignItems: 'center',
-  },
-  hint: {
-    ...Typography.body,
-    fontSize: 13,
-    color: Colors.light.textSecondary,
-  },
-  loadingBox: {
-    paddingVertical: Spacing.xl,
-    alignItems: 'center',
   },
   footer: {
     alignItems: 'center',

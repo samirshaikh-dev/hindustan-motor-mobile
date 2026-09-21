@@ -27,6 +27,13 @@ export default function AuthLayout() {
       }}>
       <Stack.Screen name="select-actor" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="staff-select"
+        options={{
+          title: 'Select Staff Profile',
+          headerShown: true,
+        }}
+      />
     </Stack>
   );
 }
