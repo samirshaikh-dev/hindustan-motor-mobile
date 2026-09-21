@@ -12,7 +12,16 @@ const getDevApiUrl = (): string => {
     : 'http://localhost:5000/api/v1';
 };
 
-const apiBase = process.env.EXPO_PUBLIC_API_URL || getDevApiUrl();
+const normalizeApiUrl = (url: string): string => {
+  const trimmed = url.trim().replace(/\/+$/, '');
+  if (!trimmed.endsWith('/api/v1')) {
+    return `${trimmed}/api/v1`;
+  }
+  return trimmed;
+};
+
+const rawUrl = process.env.EXPO_PUBLIC_API_URL || getDevApiUrl();
+const apiBase = normalizeApiUrl(rawUrl);
 
 export const ENV = {
   API_BASE_URL: apiBase,
