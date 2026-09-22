@@ -72,12 +72,18 @@ The project's [eas.json](file:///s:/client-projects/Hindustan-Electricals/hindus
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://hindustan-motor-backend.onrender.com/api/v1"
       }
     },
     "production": {
       "autoIncrement": true,
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://hindustan-motor-backend.onrender.com/api/v1"
       }
     }
   },
