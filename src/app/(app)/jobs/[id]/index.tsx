@@ -1,10 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -13,7 +14,6 @@ import {
 
 import { parseApiError } from '@/api/errors';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/Input';
 import { StatusBadge } from '@/components/common/StatusBadge';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorBanner } from '@/components/feedback/ErrorBanner';
@@ -22,15 +22,22 @@ import { Colors, Radius, Spacing, Typography } from '@/constants/theme';
 import { useJobDetail, useUpdateJobStatus } from '@/hooks/useJobs';
 import type { JobStatus } from '@/types/domain';
 import { formatDateTime } from '@/utils/formatters';
-import { getNextJobStatuses } from '@/utils/jobTransitions';
+
+const JOB_STATUS_OPTIONS: { status: JobStatus; label: string }[] = [
+  { status: 'RECEIVED', label: 'Received' },
+  { status: 'IN_PROGRESS', label: 'In Progress' },
+  { status: 'TESTING', label: 'Testing' },
+  { status: 'READY_FOR_DELIVERY', label: 'Ready for Delivery' },
+  { status: 'DELIVERED', label: 'Delivered' },
+  { status: 'CANCELLED', label: 'Cancelled' },
+];
 
 export default function JobDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, isLoading, error, refetch, isRefetching } = useJobDetail(id!);
   const updateStatusMutation = useUpdateJobStatus(id!);
 
-  const [pendingStatus, setPendingStatus] = useState<JobStatus | null>(null);
-  const [transitionNotes, setTransitionNotes] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -50,24 +57,24 @@ export default function JobDetailScreen() {
     );
   }
 
-  const onConfirmTransition = async () => {
-    if (!pendingStatus) return;
+  const handleStatusSelect = async (newStatus: JobStatus) => {
+    setIsDropdownOpen(false);
+    if (newStatus === data.status) return;
+
     try {
       await updateStatusMutation.mutateAsync({
-        status: pendingStatus,
-        notes: transitionNotes.trim() || undefined,
+        status: newStatus,
       });
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setPendingStatus(null);
-      setTransitionNotes('');
     } catch (e) {
-      Alert.alert('Status update failed', parseApiError(e).message);
+      const msg = parseApiError(e).message;
+      if (Platform.OS === 'web') {
+        window.alert(msg);
+      } else {
+        Alert.alert('Status update failed', msg);
+      }
     }
   };
-
-  const nextStatuses = getNextJobStatuses(data.status);
-  const primaryNextStatus = nextStatuses.find((s) => s !== 'CANCELLED');
-  const cancelStatus = nextStatuses.find((s) => s === 'CANCELLED');
 
   return (
     <ScreenWrapper refreshing={isRefetching} onRefresh={() => refetch()}>
@@ -78,28 +85,68 @@ export default function JobDetailScreen() {
               <Text style={styles.num}>{data.jobNumber}</Text>
               <Text style={styles.created}>Created {formatDateTime(data.createdAt)}</Text>
             </View>
-            <StatusBadge status={data.status} />
           </View>
 
-          {primaryNextStatus || cancelStatus ? (
-            <View style={styles.transitionRow}>
-              {primaryNextStatus ? (
-                <Button
-                  title={`Advance to ${primaryNextStatus.replace(/_/g, ' ')}`}
-                  variant="primary"
-                  style={styles.transitionBtn}
-                  onPress={() => setPendingStatus(primaryNextStatus)}
-                />
-              ) : null}
-              {cancelStatus ? (
-                <Button
-                  title="Cancel Job"
-                  variant="danger"
-                  onPress={() => setPendingStatus('CANCELLED')}
-                />
-              ) : null}
-            </View>
-          ) : null}
+          <View style={styles.statusSection}>
+            <Text style={styles.statusSectionLabel}>Status</Text>
+            <Pressable
+              style={({ pressed }) => [
+                styles.dropdownTrigger,
+                isDropdownOpen && styles.dropdownTriggerActive,
+                pressed && styles.dropdownTriggerPressed,
+              ]}
+              disabled={updateStatusMutation.isPending}
+              onPress={() => setIsDropdownOpen((prev) => !prev)}>
+              <View style={styles.dropdownLeft}>
+                <StatusBadge status={data.status} />
+              </View>
+              <View style={styles.dropdownRight}>
+                {updateStatusMutation.isPending ? (
+                  <ActivityIndicator size="small" color={Colors.light.primary} />
+                ) : (
+                  <View style={styles.dropdownActionHint}>
+                    <Text style={styles.dropdownHintText}>Change</Text>
+                    <Ionicons
+                      name={isDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color={Colors.light.textSecondary}
+                    />
+                  </View>
+                )}
+              </View>
+            </Pressable>
+
+            {isDropdownOpen ? (
+              <View style={styles.dropdownMenu}>
+                {JOB_STATUS_OPTIONS.map((item, idx) => {
+                  const isSelected = item.status === data.status;
+                  return (
+                    <Pressable
+                      key={item.status}
+                      disabled={updateStatusMutation.isPending}
+                      style={({ pressed }) => [
+                        styles.dropdownOption,
+                        idx > 0 && styles.dropdownOptionBorder,
+                        isSelected && styles.dropdownOptionSelected,
+                        pressed && styles.dropdownOptionPressed,
+                      ]}
+                      onPress={() => handleStatusSelect(item.status)}>
+                      <View style={styles.dropdownOptionLeft}>
+                        <StatusBadge status={item.status} />
+                      </View>
+                      {isSelected ? (
+                        <Ionicons
+                          name="checkmark"
+                          size={18}
+                          color={Colors.light.primary}
+                        />
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+          </View>
         </View>
 
         {data.motor ? (
@@ -175,43 +222,6 @@ export default function JobDetailScreen() {
             onPress={() => router.push(`/(app)/jobs/${id}/history`)}
           />
         </View>
-
-        <Modal visible={!!pendingStatus} transparent animationType="fade">
-          <View style={styles.modalBg}>
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>Update Job Status</Text>
-              <Text style={styles.modalSub}>
-                Advance status to{' '}
-                <Text style={styles.boldText}>
-                  {pendingStatus?.replace(/_/g, ' ')}
-                </Text>
-              </Text>
-
-              <Input
-                label="Transition Note (optional)"
-                placeholder="Reason or notes for status update"
-                value={transitionNotes}
-                onChangeText={setTransitionNotes}
-              />
-
-              <View style={styles.modalActions}>
-                <Button
-                  title="Cancel"
-                  variant="ghost"
-                  onPress={() => {
-                    setPendingStatus(null);
-                    setTransitionNotes('');
-                  }}
-                />
-                <Button
-                  title="Confirm Update"
-                  loading={updateStatusMutation.isPending}
-                  onPress={onConfirmTransition}
-                />
-              </View>
-            </View>
-          </View>
-        </Modal>
       </View>
     </ScreenWrapper>
   );
@@ -259,15 +269,86 @@ const styles = StyleSheet.create({
     color: Colors.light.textSecondary,
     marginTop: 2,
   },
-  transitionRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
+  statusSection: {
     borderTopWidth: 1,
     borderTopColor: Colors.light.borderSubtle,
     paddingTop: Spacing.md,
+    gap: Spacing.xs,
   },
-  transitionBtn: {
-    flex: 1,
+  statusSectionLabel: {
+    ...Typography.caption,
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.light.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  dropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.light.backgroundSubtle,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    minHeight: 46,
+  },
+  dropdownTriggerActive: {
+    borderColor: Colors.light.primary,
+  },
+  dropdownTriggerPressed: {
+    opacity: 0.8,
+  },
+  dropdownLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dropdownRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dropdownActionHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  dropdownHintText: {
+    ...Typography.caption,
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.light.textSecondary,
+  },
+  dropdownMenu: {
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: Radius.md,
+    marginTop: Spacing.xs,
+    overflow: 'hidden',
+  },
+  dropdownOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+  },
+  dropdownOptionBorder: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.borderSubtle,
+  },
+  dropdownOptionSelected: {
+    backgroundColor: Colors.light.backgroundSubtle,
+  },
+  dropdownOptionPressed: {
+    backgroundColor: Colors.light.secondary,
+  },
+  dropdownOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   motorCard: {
     backgroundColor: Colors.light.surface,
@@ -385,41 +466,5 @@ const styles = StyleSheet.create({
   footerActions: {
     marginTop: Spacing.xl,
     marginBottom: Spacing.xxl,
-  },
-  modalBg: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.xl,
-    width: '100%',
-    maxWidth: 400,
-    gap: Spacing.md,
-  },
-  modalTitle: {
-    ...Typography.title,
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.light.text,
-  },
-  modalSub: {
-    ...Typography.subhead,
-    fontSize: 14,
-    color: Colors.light.textSecondary,
-  },
-  boldText: {
-    fontWeight: '700',
-    color: Colors.light.text,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: Spacing.sm,
-    marginTop: Spacing.sm,
   },
 });
