@@ -38,9 +38,12 @@ export default function StaffSelectScreen() {
   const employees = data?.employees ?? [];
 
   const filteredEmployees = useMemo(() => {
+    const staffOnly = employees.filter(
+      (emp) => emp.role !== 'OWNER' && emp.id !== 'admin',
+    );
     const q = search.trim().toLowerCase();
-    if (!q) return employees;
-    return employees.filter(
+    if (!q) return staffOnly;
+    return staffOnly.filter(
       (emp) =>
         emp.name.toLowerCase().includes(q) || emp.phone.includes(q),
     );
