@@ -54,7 +54,7 @@ export default function StaffSelectScreen() {
       setSelectingId(employee.id);
       await Haptics.selectionAsync();
       await setActiveActor(employee.id, employee.name, employee.role);
-      router.replace('/(app)');
+      router.replace('/(app)/employee');
     } catch (e) {
       setSelectingId(null);
       const msg = parseApiError(e).message;

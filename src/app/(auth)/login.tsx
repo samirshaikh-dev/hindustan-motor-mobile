@@ -30,7 +30,7 @@ export default function LoginScreen() {
     try {
       const result = await authService.login({ email, password });
       await setAdminSession(result.accessToken, result.refreshToken);
-      router.replace('/(auth)/select-actor');
+      router.replace('/(app)/owner');
     } catch (e) {
       setError(parseApiError(e).message);
     } finally {

@@ -1,8 +1,20 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 
 import { Colors } from '@/constants/theme';
 import { useAuthStore } from '@/store/useAuthStore';
+
+const sharedHeader = {
+  headerShown: true,
+  headerTintColor: Colors.light.primary,
+  headerBackTitle: 'Back',
+  headerShadowVisible: false,
+  headerStyle: {
+    backgroundColor: Colors.light.backgroundSubtle,
+  },
+  headerTitleStyle: {
+    fontWeight: '600' as const,
+  },
+};
 
 export default function AppLayout() {
   const activeActorId = useAuthStore((s) => s.activeActorId);
@@ -12,109 +24,50 @@ export default function AppLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: Colors.light.tabActive,
-        tabBarInactiveTintColor: Colors.light.tabInactive,
-        tabBarStyle: {
-          backgroundColor: Colors.light.surface,
-          borderTopColor: Colors.light.border,
-          borderTopWidth: 1,
-          height: 56,
-          paddingBottom: 6,
-          paddingTop: 6,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-        },
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Floor',
-          tabBarLabel: 'Floor',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'grid' : 'grid-outline'}
-              size={size ?? 20}
-              color={color}
-            />
-          ),
-        }}
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="owner" />
+      <Stack.Screen name="employee" />
+
+      <Stack.Screen
+        name="shared/motor/[id]/index"
+        options={{ title: 'Motor Detail', ...sharedHeader }}
       />
-      <Tabs.Screen
-        name="motors"
-        options={{
-          title: 'Motors',
-          tabBarLabel: 'Motors',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'hardware-chip' : 'hardware-chip-outline'}
-              size={size ?? 20}
-              color={color}
-            />
-          ),
-        }}
+      <Stack.Screen
+        name="shared/motor/[id]/edit"
+        options={{ title: 'Edit Motor', ...sharedHeader }}
       />
-      <Tabs.Screen
-        name="jobs"
-        options={{
-          title: 'Jobs',
-          tabBarLabel: 'Jobs',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'document-text' : 'document-text-outline'}
-              size={size ?? 20}
-              color={color}
-            />
-          ),
-        }}
+      <Stack.Screen
+        name="shared/motor/[id]/upload"
+        options={{ title: 'Upload Photo', ...sharedHeader }}
       />
-      <Tabs.Screen
-        name="tasks"
-        options={{
-          title: 'Tasks',
-          tabBarLabel: 'Tasks',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'checkbox' : 'checkbox-outline'}
-              size={size ?? 20}
-              color={color}
-            />
-          ),
-        }}
+      <Stack.Screen
+        name="shared/motor/[id]/history"
+        options={{ title: 'Motor History', ...sharedHeader }}
       />
-      <Tabs.Screen
-        name="employees"
-        options={{
-          title: 'Team',
-          tabBarLabel: 'Team',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'people' : 'people-outline'}
-              size={size ?? 20}
-              color={color}
-            />
-          ),
-        }}
+      <Stack.Screen
+        name="shared/motors/register"
+        options={{ title: 'Register Motor', ...sharedHeader }}
       />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarLabel: 'Settings',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'settings' : 'settings-outline'}
-              size={size ?? 20}
-              color={color}
-            />
-          ),
-        }}
+      <Stack.Screen
+        name="shared/jobs/create"
+        options={{ title: 'Create Job', ...sharedHeader }}
       />
-      <Tabs.Screen name="history" options={{ href: null, headerShown: false }} />
-    </Tabs>
+      <Stack.Screen
+        name="shared/job/[id]/index"
+        options={{ title: 'Job Detail', ...sharedHeader }}
+      />
+      <Stack.Screen
+        name="shared/job/[id]/add-task"
+        options={{ title: 'Add Task', ...sharedHeader }}
+      />
+      <Stack.Screen
+        name="shared/job/[id]/history"
+        options={{ title: 'Job History', ...sharedHeader }}
+      />
+      <Stack.Screen
+        name="shared/task/[id]"
+        options={{ title: 'Task Detail', ...sharedHeader }}
+      />
+    </Stack>
   );
 }
