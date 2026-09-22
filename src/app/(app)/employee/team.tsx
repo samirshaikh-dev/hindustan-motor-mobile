@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { parseApiError } from '@/api/errors';
 import { SearchInput } from '@/components/common/SearchInput';
@@ -165,12 +166,19 @@ export default function TeamScreen() {
                       {isBusy ? ` · ${tasks} active task${tasks > 1 ? 's' : ''}` : ' · Available'}
                     </Text>
                   </View>
-                  <View
-                    style={[
-                      styles.statusDot,
-                      isBusy ? styles.statusDotBusy : styles.statusDotAvailable,
-                    ]}
-                  />
+                  {emp.phone ? (
+                    <Pressable
+                      hitSlop={8}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Call ${emp.name}`}
+                      style={({ pressed }) => [
+                        styles.callButton,
+                        pressed && styles.callButtonPressed,
+                      ]}
+                      onPress={() => Linking.openURL(`tel:${emp.phone}`)}>
+                      <Ionicons name="call-outline" size={18} color={Colors.light.primary} />
+                    </Pressable>
+                  ) : null}
                 </View>
               );
             })}
@@ -356,15 +364,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.light.textSecondary,
   },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: Radius.full,
+  callButton: {
+    padding: 6,
+    marginLeft: Spacing.xs,
   },
-  statusDotBusy: {
-    backgroundColor: Colors.light.warning,
-  },
-  statusDotAvailable: {
-    backgroundColor: Colors.light.success,
+  callButtonPressed: {
+    opacity: 0.6,
   },
 });
